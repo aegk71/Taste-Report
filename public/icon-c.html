@@ -8,26 +8,19 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Taste Report">
-<link rel="icon" type="image/png" href="icons/icon-c-192.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon-c.png">
-<title>Taste Report – Icon C</title>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Taste Report</title>
 <style>
   body{margin:0;min-height:100dvh;display:grid;place-items:center;font:17px/1.5 system-ui,sans-serif;background:#2B1D14;color:#F3E6C6;text-align:center;padding:24px}
-  img{width:120px;height:120px;border-radius:27px;display:block;margin:0 auto 18px}
   a{color:#E4AE45}
 </style>
 </head>
 <body>
-<main>
-  <img src="icons/apple-touch-icon-c.png" alt="Icon C">
-  <h1 style="font-size:22px;margin:0 0 10px">Taste Report – Icon C</h1>
-  <p>Zum Ausprobieren: Teilen-Menü, „Zum Home-Bildschirm“. Das Symbol auf dem Homescreen startet danach die App.</p>
-  <p><a href="./">Zur App</a></p>
-</main>
+<p><a href="./">Zur App</a></p>
 <script>
-  // Vom Homescreen gestartet (ohne #ansicht): direkt in die App. Im Browser und mit #ansicht
-  // bleibt die Seite stehen, damit Safari beim Hinzufügen das Icon C übernimmt.
-  if ((navigator.standalone || matchMedia('(display-mode: standalone)').matches) && location.hash !== '#ansicht') location.replace('./');
+  // Altlast aus dem Icon-Vergleich: das damals angelegte Homescreen-Symbol zeigt noch auf diese Seite.
+  // Es startet deshalb direkt die App.
+  location.replace('./');
 </script>
 </body>
 </html>

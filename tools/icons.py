@@ -1,8 +1,8 @@
 """Erzeugt die App-Icons aus der Hopfendolde des Logos (src/assets/dolde-pfade.json).
 
 Aufruf:  npm run icons   (benötigt: pip install pymupdf)
-Varianten: B = grüne Dolde mit dunkler Kontur auf Ocker (Homescreen-Icon der App)
-           C = Ocker-Dolde auf Dunkelbraun (Vergleichsvariante, siehe public/icon-c.html)
+Gewählt: Variante C (Ocker-Dolde auf Dunkelbraun). Variante B (grüne Dolde mit dunkler Kontur auf Ocker)
+bleibt im Skript für spätere Zwecke erhalten.
 """
 import json
 import pathlib
@@ -53,15 +53,12 @@ def png(variante: str, groesse: int, name: str, gap: float = 0.0) -> None:
     print("geschrieben:", name, groesse)
 
 
-png("B", 180, "apple-touch-icon.png")
-png("B", 192, "icon-192.png")
-png("B", 512, "icon-512.png")
-png("B", 512, "icon-maskable-512.png")
-png("B", 32, "favicon-32.png", gap=2.4)
-png("C", 180, "apple-touch-icon-c.png")
-png("C", 192, "icon-c-192.png")
-png("C", 512, "icon-c-512.png")
+png("C", 180, "apple-touch-icon.png")
+png("C", 192, "icon-192.png")
+png("C", 512, "icon-512.png")
+png("C", 512, "icon-maskable-512.png")
+png("C", 32, "favicon-32.png", gap=2.4)
 
-# Vektor-Favicon (Variante B)
-(OUT / "favicon.svg").write_text(svg("B", 1.0).replace("{S}", "64"), encoding="utf-8")
+# Vektor-Favicon
+(OUT / "favicon.svg").write_text(svg("C", 1.0).replace("{S}", "64"), encoding="utf-8")
 print("geschrieben: favicon.svg")

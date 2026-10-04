@@ -42,9 +42,9 @@ gleich aussieht. Sonst keine weiteren Laufzeit-Abhängigkeiten ohne Rückfrage.
 - **Dolde** aus dem Logo (`schema/logo_paths.json`, Pfade `cone`) als Svelte-Komponente `Dolde.svelte`: einfarbig
   (`currentColor`), mit Teilfüllung (0–100 % von links) für die Bewertung, auch als Pfad für das PDF nutzbar.
 - **Platzhalter** ohne Foto: blasse Dolde auf Ocker (Getränk, Tasting, Bericht).
-- **Icon:** Variante **B** (grüne Dolde mit dunkler Kontur auf Ocker) als Homescreen-Icon. **Variante C** (Ocker auf Dunkelbraun)
-  wird ebenfalls erzeugt (siehe Phase 1). Größen: Apple-Touch 180, PWA 192/512, Maskable 512 (Dolde in der inneren 80 %-Zone),
-  Favicon. In kleinen Größen die Blattzwischenräume leicht verbreitern.
+- **Icon:** Variante **C** (Ocker-Dolde auf Dunkelbraun) ist gewählt und erzeugt (`npm run icons`). Größen: Apple-Touch 180,
+  PWA 192/512, Maskable 512 (Dolde in der inneren 80 %-Zone), Favicon. In kleinen Größen die Blattzwischenräume leicht verbreitern.
+  `public/icon-c.html` leitet nur noch in die App um (das beim Vergleich angelegte Homescreen-Symbol zeigt darauf).
 - Bewertung in Listen: **eine Dolde + Zahl** (nicht bewertet: graue Dolde + „–“). Im Regler: fünf Dolden mit Viertelfüllung.
   Zahlenformat: ganze/halbe Werte mit einer Nachkommastelle (`4,5`, `3,0`), Viertel mit zwei (`4,25`).
 
@@ -152,7 +152,7 @@ Dexie-DB `taste-report`: `einstellungen: 'id'`, `tastings: 'id, datumVon, geaend
    (entprellt, ca. 400 ms und beim Verlassen). Anzeige „✓ Automatisch gespeichert“, bei Fehler eine sichtbare Meldung.
 5. **Auswertung** – „Bier des Festivals“ (änderbar), Rangliste, Durchschnitt je Hersteller, Fazit (Freitext, wird gespeichert),
    Export-Schaltfläche.
-6. **Einstellungen** – Verkoster-Standard, Stile pflegen (hinzufügen, umbenennen, sortieren, aktiv/inaktiv), Datensicherung:
+6. **Einstellungen** – Verkoster-Standard, Stile pflegen (hinzufügen, umbenennen, sortieren per ↑ ↓, aktiv/inaktiv), Datensicherung:
    Speicherstatus (`navigator.storage.persisted()`/`estimate()`), letzte Sicherung, „Backup erstellen (ZIP)“ (alle Tastings),
    „Backup einspielen…“.
 7. **Export-Dialog** (unterer Dialog) – PDF-Bericht mit Vorschau (Schalter „Fotos einbeziehen“, „Nur bewertete Biere“),
@@ -219,8 +219,7 @@ ABV | Preis | Notiz | Zustand | probiert am. Autofilter, fixierte Kopfzeile, Dat
 
 **Phase 1 – Grundgerüst, Optik & Deployment**
 Vite/Svelte/TS, PWA (Name „Taste Report“, Manifest, Service Worker), Design-Tokens Hell/Dunkel, Schriften, `Dolde.svelte`,
-Icons **B** (live) und **C**. Für den Vergleich liegt im Deploy eine zweite Einstiegsseite `icon-c.html` mit eigenem Apple-Touch-Icon,
-sodass ich beide Icons nacheinander auf dem Homescreen ausprobieren kann. GitHub-Actions-Deploy. Platzhalter-Startseite mit Logo.
+Icons (B und C zum Vergleich, **C gewählt**). GitHub-Actions-Deploy. Platzhalter-Startseite mit Logo.
 *Abnahme:* URL auf dem iPhone öffnen, zum Homescreen hinzufügen (B und C), im Flugmodus starten, Hell/Dunkel stimmt.
 
 **Phase 2 – Datenmodell, Einstellungen, Tastings**
