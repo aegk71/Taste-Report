@@ -49,7 +49,11 @@ export interface Getraenk {
   /** 0..5 in 0,25er-Schritten; undefined = nicht bewertet (ungleich 0) */
   bewertung?: number;
   notiz?: string;
+  /** Alkoholgehalt in % Vol. */
   abv?: number;
+  /** Menge in Litern (z. B. 0,4), auf die sich der Preis bezieht */
+  menge?: number;
+  /** Preis in Euro für die angegebene Menge */
   preis?: number;
   probiertAm?: string;
   erstelltAm: string;

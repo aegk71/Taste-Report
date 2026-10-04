@@ -74,7 +74,7 @@
   }
 
   function detail(g: Getraenk): string {
-    return [g.stilName, g.abv !== undefined ? `${String(g.abv).replace('.', ',')} %` : undefined].filter(Boolean).join(' · ');
+    return [g.stilName, g.abv !== undefined ? `${String(g.abv).replace('.', ',')} % Vol.` : undefined].filter(Boolean).join(' · ');
   }
 </script>
 

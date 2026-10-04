@@ -38,6 +38,7 @@
   let bewertung = $state<number | undefined>();
   let notiz = $state('');
   let abvText = $state('');
+  let mengeText = $state('');
   let preisText = $state('');
   let mehrOffen = $state(false);
   let alleStile = $state(false);
@@ -93,7 +94,8 @@
         notiz = g.notiz ?? '';
         abvText = g.abv !== undefined ? String(g.abv).replace('.', ',') : '';
         preisText = g.preis !== undefined ? g.preis.toFixed(2).replace('.', ',') : '';
-        mehrOffen = g.abv !== undefined || g.preis !== undefined;
+        mengeText = g.menge !== undefined ? String(g.menge).replace('.', ',') : '';
+        mehrOffen = g.abv !== undefined || g.menge !== undefined || g.preis !== undefined;
       }
     } else {
       const h = await letzterHersteller(tastingId);
@@ -143,6 +145,7 @@
       bewertung,
       notiz,
       abv: zahl(abvText),
+      menge: zahl(mengeText),
       preis: zahl(preisText),
     };
     const aktuelleStile = $state.snapshot(stile);
@@ -325,8 +328,13 @@
             <input id="abv" class="eingabe" type="text" inputmode="decimal" bind:value={abvText} oninput={geaendert} />
           </div>
           <div class="feld">
+            <label for="menge">{t.menge}</label>
+            <input id="menge" class="eingabe" type="text" inputmode="decimal" placeholder="0,4" bind:value={mengeText} oninput={geaendert} />
+          </div>
+          <div class="feld">
             <label for="preis">{t.preis}</label>
             <input id="preis" class="eingabe" type="text" inputmode="decimal" bind:value={preisText} oninput={geaendert} />
+            <span class="hinweis nur-text">{t.preisHinweis}</span>
           </div>
         </div>
       {/if}
@@ -457,6 +465,12 @@
     padding: 0 4px;
     border-top: 1.5px dashed var(--line);
     font-weight: 600;
+  }
+  .nur-text {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    font-size: 13px;
   }
   .zwei {
     display: grid;

@@ -96,8 +96,9 @@ interface Getraenk {
   stilName?: string;                 // Snapshot
   bewertung?: number;                // 0..5 in 0,25er-Schritten; undefined = nicht bewertet (≠ 0)
   notiz?: string;
-  abv?: number;                      // Alkoholgehalt in %
-  preis?: number;                    // in Euro
+  abv?: number;                      // Alkoholgehalt in % Vol.
+  menge?: number;                    // Menge in Litern (z. B. 0,4), Bezug des Preises
+  preis?: number;                    // in Euro, für die angegebene Menge
   probiertAm?: string;               // gesetzt beim Wechsel auf 'probiert'
   erstelltAm: string;
   geaendertAm: string;
@@ -146,7 +147,7 @@ Dexie-DB `taste-report`: `einstellungen: 'id'`, `tastings: 'id, datumVon, geaend
    „Alle auf-/zuklappen“. Der Zustand der Gruppen bleibt beim Zurückspringen erhalten. Unten fixiert: **„+ Bier“**. Export oben rechts.
 4. **Getränk erfassen/bearbeiten** – **ein Bildschirm, Autosave, kein Speichern-Knopf.** Reihenfolge: Zustand (Vorgemerkt|Probiert),
    Hersteller (Autovervollständigung, Standort optional), Name, Stil (Chips: die ersten 8 aktiven Stile in der Reihenfolge der Einstellungen, „alle …“ zeigt den Rest), Bewertung (Regler), Fotos (bis 3), Notiz (mit
-   Kopier-Icon), eingeklappt „Mehr Angaben“ (ABV, Preis), „Getränk löschen“. Kopf: ‹ zurück, „Bier x von y“, ↑ ↓ zum vorherigen/
+   Kopier-Icon), eingeklappt „Mehr Angaben“ (Alkohol in % Vol., Menge in L, Preis in €), „Getränk löschen“. Kopf: ‹ zurück, „Bier x von y“, ↑ ↓ zum vorherigen/
    nächsten Getränk (Reihenfolge wie in der Übersicht).
    Autosave: ein neues Getränk wird erst angelegt, wenn Hersteller und Name gefüllt sind; danach speichert jede Änderung
    (entprellt, ca. 400 ms und beim Verlassen). Anzeige „✓ Automatisch gespeichert“, bei Fehler eine sichtbare Meldung.
@@ -176,7 +177,7 @@ Dateinamen: `{Tastingname}_{Typ}_{JJJJ-MM-TT}.pdf|.xlsx|.zip` (Sonderzeichen ber
 - **Seite 2 Fazit:** Kennzahlen (Anzahl Biere, Hersteller, Ø-Wert), Bier des Festivals, Top 5, Fazit-Text (bei Länge Umbruch auf
   Folgeseite). Ohne Bewertungen entfallen Sieger und Top 5.
 - **Herstellerseiten:** Kopf (Hersteller · Standort · Ø-Wert), je Getränk eine Karte: Titelbild (oder Dolde), Name, Stil-Tag,
-  Dolden + Zahl, ABV/Preis, Notiz, weitere Fotos klein. Karten nicht über Seitenumbrüche teilen.
+  Dolden + Zahl, % Vol./Menge/Preis, Notiz, weitere Fotos klein. Karten nicht über Seitenumbrüche teilen.
 - Vorgemerkte Getränke erscheinen nicht im Bericht. Fußzeile „Taste Report · Seite x von y“.
 - Schriften als TTF einbetten (Alfa Slab One, Source Sans 3). Dolden als Vektorpfad zeichnen.
 - Vorschau in der App mit **pdfjs auf Canvas/Bilder** (nicht per `<iframe>`, iOS-PWA zeigt sonst nur Seite 1).
@@ -184,7 +185,7 @@ Dateinamen: `{Tastingname}_{Typ}_{JJJJ-MM-TT}.pdf|.xlsx|.zip` (Sonderzeichen ber
 ### Excel (ExcelJS, schlank)
 
 Kopfbereich (Tasting, Datum, Ort, Verkoster), eine Tabelle: Hersteller | Standort | Getränk | Stil | Bewertung (Zahl) |
-ABV | Preis | Notiz | Zustand | probiert am. Autofilter, fixierte Kopfzeile, Datumsformat TT.MM.JJJJ. Keine Bilder.
+Alkohol (% Vol.) | Menge (L) | Preis (€) | Notiz | Zustand | probiert am. Autofilter, fixierte Kopfzeile, Datumsformat TT.MM.JJJJ. Keine Bilder.
 
 ### ZIP-Backup und Import
 

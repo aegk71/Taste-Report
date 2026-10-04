@@ -12,6 +12,7 @@ export interface GetraenkEingabe {
   bewertung?: number;
   notiz: string;
   abv?: number;
+  menge?: number;
   preis?: number;
 }
 
@@ -110,6 +111,7 @@ export async function getraenkSpeichern(eingabe: GetraenkEingabe, bestehendId: s
       bewertung,
       notiz: eingabe.notiz.trim() || undefined,
       abv: eingabe.abv,
+      menge: eingabe.menge,
       preis: eingabe.preis,
       probiertAm:
         eingabe.zustand === 'probiert' ? (bestehend?.zustand === 'probiert' && bestehend.probiertAm ? bestehend.probiertAm : jetzt) : undefined,
