@@ -9,6 +9,7 @@ Live: https://aegk71.github.io/Taste-Report/
 npm install
 npm run dev      # lokaler Entwicklungsserver
 npm run check    # Typprüfung
+npm test         # Unit-Tests der Auswertung (Node)
 npm run build    # Produktions-Build nach dist/
 npm run icons    # Icons neu erzeugen (benötigt Python + pymupdf)
 ```

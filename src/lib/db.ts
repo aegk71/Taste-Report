@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { kennzahlen as kennzahlenVon } from './auswertung';
 import type { Einstellungen, Foto, Getraenk, Hersteller, Tasting } from './model';
 import { STANDARD_STILE } from './model';
 
@@ -70,12 +71,6 @@ export interface TastingKennzahlen {
 
 export async function tastingKennzahlen(tastingId: string): Promise<TastingKennzahlen> {
   const getraenke = await db.getraenke.where('tastingId').equals(tastingId).toArray();
-  const probiert = getraenke.filter((g) => g.zustand === 'probiert');
-  const bewertet = probiert.filter((g) => g.bewertung !== undefined);
-  return {
-    probiert: probiert.length,
-    vorgemerkt: getraenke.length - probiert.length,
-    durchschnitt:
-      bewertet.length > 0 ? bewertet.reduce((summe, g) => summe + (g.bewertung ?? 0), 0) / bewertet.length : undefined,
-  };
+  const k = kennzahlenVon(getraenke);
+  return { probiert: k.biere, vorgemerkt: getraenke.length - k.biere, durchschnitt: k.durchschnitt };
 }

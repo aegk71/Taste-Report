@@ -1,3 +1,4 @@
+import { mittelwert } from './auswertung';
 import { db } from './db';
 import { bewertungNormalisieren } from './bewertung';
 import type { Getraenk, Hersteller, Stil, Zustand } from './model';
@@ -27,11 +28,6 @@ const normal = (text: string) => text.trim().toLocaleLowerCase('de');
 const nachName = (a: { name: string }, b: { name: string }) =>
   a.name.localeCompare(b.name, 'de', { numeric: true, sensitivity: 'base' });
 const nachErfassung = (a: Getraenk, b: Getraenk) => a.erstelltAm.localeCompare(b.erstelltAm);
-
-export function mittelwert(werte: (number | undefined)[]): number | undefined {
-  const zahlen = werte.filter((w): w is number => w !== undefined);
-  return zahlen.length > 0 ? zahlen.reduce((s, w) => s + w, 0) / zahlen.length : undefined;
-}
 
 /** Merkliste (vorgemerkt) und Herstellergruppen (probiert), Hersteller alphabetisch, Getränke in Erfassungsreihenfolge. */
 export function gruppiere(hersteller: Hersteller[], getraenke: Getraenk[]): { merkliste: Getraenk[]; gruppen: Gruppe[] } {

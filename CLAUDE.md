@@ -213,6 +213,7 @@ Alkohol (% Vol.) | Menge (L) | Preis (€) | Notiz | Zustand | probiert am. Auto
   statt den Export abzubrechen.
 - Installierte iOS-PWA läuft in WKWebView: PDF-Vorschau nur über pdfjs (siehe oben).
 - Diktierfunktion braucht keinen Code (iOS-Tastaturdiktat in den Textfeldern).
+- Auswertungslogik (`src/lib/auswertung.ts`) ist rein und mit `npm test` (Node, `tests/`) geprüft; Regeln dort ändern nur zusammen mit den Tests.
 - Testen: lokaler Vite-Server per Browser-Tools bedienen, Testdaten direkt in IndexedDB anlegen, erzeugte xlsx/pdf **parsen**
   statt Screenshots auszuwerten. Testbilder: `belgian ale.jpg`, `white easter 1.jpg`, `WhatsApp Image … .jpeg`.
 - Die Bilddateien und `schema/` gehören **nicht** ins öffentliche Repo (`.gitignore`). Ins Repo kommen nur die erzeugten

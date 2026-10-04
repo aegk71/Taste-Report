@@ -1,12 +1,13 @@
 <script lang="ts">
   import { liveQuery } from 'dexie';
+  import Auswertung from '../components/Auswertung.svelte';
   import Bewertung from '../components/Bewertung.svelte';
   import Dolde from '../components/Dolde.svelte';
   import FotoBild from '../components/FotoBild.svelte';
   import { db } from '../lib/db';
   import { formatZeitraum } from '../lib/datum';
   import { gruppiere, navigationsIds } from '../lib/getraenke';
-  import { holeEingeklappt, MERKLISTE, setzeEingeklappt } from '../lib/klappZustand';
+  import { holeEingeklappt, holeReiter, MERKLISTE, setzeEingeklappt, setzeReiter, type Reiter } from '../lib/klappZustand';
   import type { Getraenk, Hersteller, Tasting } from '../lib/model';
   import { de } from '../lib/texte/de';
 
@@ -35,7 +36,13 @@
   let daten = $state<Daten | null>(null);
   // svelte-ignore state_referenced_locally
   let eingeklappt = $state(holeEingeklappt(tastingId));
-  let reiter = $state<'getraenke' | 'auswertung'>('getraenke');
+  // svelte-ignore state_referenced_locally
+  let reiter = $state<Reiter>(holeReiter(tastingId));
+
+  function reiterWaehlen(neu: Reiter) {
+    reiter = neu;
+    setzeReiter(tastingId, neu);
+  }
   let hatCover = $state(false);
 
   $effect(() => {
@@ -103,12 +110,17 @@
     </div>
 
     <div class="reiter" role="tablist">
-      <button role="tab" aria-selected={reiter === 'getraenke'} class:an={reiter === 'getraenke'} onclick={() => (reiter = 'getraenke')}>{t.getraenke}</button>
-      <button role="tab" aria-selected={reiter === 'auswertung'} class:an={reiter === 'auswertung'} onclick={() => (reiter = 'auswertung')}>{t.auswertung}</button>
+      <button role="tab" aria-selected={reiter === 'getraenke'} class:an={reiter === 'getraenke'} onclick={() => reiterWaehlen('getraenke')}>{t.getraenke}</button>
+      <button role="tab" aria-selected={reiter === 'auswertung'} class:an={reiter === 'auswertung'} onclick={() => reiterWaehlen('auswertung')}>{t.auswertung}</button>
     </div>
 
-    {#if reiter === 'auswertung'}
-      <div class="karte leer"><p class="hinweis">{t.auswertungFolgt}</p></div>
+    {#if reiter === 'auswertung' && daten}
+      <Auswertung
+        {tasting}
+        hersteller={daten.hersteller}
+        getraenke={daten.getraenke}
+        onBierOeffnen={(getraenkId) => onBierOeffnen(tastingId, getraenkId, ids)}
+      />
     {:else if daten && daten.getraenke.length === 0}
       <div class="karte leer">
         <span class="platzhalter"><Dolde hoehe={56} /></span>
