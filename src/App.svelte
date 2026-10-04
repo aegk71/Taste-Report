@@ -5,13 +5,24 @@
   import { de } from './lib/texte/de';
 
   const t = de.start;
-  const iconCUrl = `${import.meta.env.BASE_URL}icon-c.html`;
+  const iconCPfad = `${import.meta.env.BASE_URL}icon-c.html#ansicht`;
+  const iconCAdresse = new URL(iconCPfad, location.href).href;
   const installiert =
     (navigator as Navigator & { standalone?: boolean }).standalone === true ||
     matchMedia('(display-mode: standalone)').matches;
 
   let online = $state(navigator.onLine);
   let offlineBereit = $state(false);
+  let kopiert = $state(false);
+
+  async function adresseKopieren() {
+    try {
+      await navigator.clipboard.writeText(iconCAdresse);
+      kopiert = true;
+    } catch {
+      kopiert = false;
+    }
+  }
 
   registerSW({
     immediate: true,
@@ -68,8 +79,16 @@
 
   <section class="karte">
     <h2>{t.iconTitel}</h2>
-    <p>{t.iconText}</p>
-    <p class="aktion"><a class="knopf" href={iconCUrl}>{t.iconLink}</a></p>
+    {#if installiert}
+      <p>{t.iconInstalliert}</p>
+      <p class="adresse">{iconCAdresse}</p>
+      <p class="aktion">
+        <button class="knopf" onclick={adresseKopieren}>{kopiert ? t.adresseKopiert : t.adresseKopieren}</button>
+      </p>
+    {:else}
+      <p>{t.iconText}</p>
+      <p class="aktion"><a class="knopf" href={iconCPfad}>{t.iconLink}</a></p>
+    {/if}
   </section>
 </main>
 
@@ -120,5 +139,11 @@
   }
   .aktion {
     margin-top: 12px;
+  }
+  .adresse {
+    margin-top: 8px;
+    font-size: 14px;
+    word-break: break-all;
+    color: var(--muted);
   }
 </style>

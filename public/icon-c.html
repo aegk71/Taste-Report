@@ -25,9 +25,9 @@
   <p><a href="./">Zur App</a></p>
 </main>
 <script>
-  // Vom Homescreen gestartet: direkt in die App. Im Browser bleibt die Seite stehen,
-  // damit Safari beim Hinzufügen das Icon C übernimmt.
-  if (navigator.standalone || matchMedia('(display-mode: standalone)').matches) location.replace('./');
+  // Vom Homescreen gestartet (ohne #ansicht): direkt in die App. Im Browser und mit #ansicht
+  // bleibt die Seite stehen, damit Safari beim Hinzufügen das Icon C übernimmt.
+  if ((navigator.standalone || matchMedia('(display-mode: standalone)').matches) && location.hash !== '#ansicht') location.replace('./');
 </script>
 </body>
 </html>

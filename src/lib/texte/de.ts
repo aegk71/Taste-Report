@@ -18,6 +18,9 @@ export const de = {
     iconTitel: 'Icon vergleichen',
     iconText: 'Das Homescreen-Icon ist Variante B. Zum Vergleich lässt sich Variante C installieren:',
     iconLink: 'Icon C ausprobieren',
+    iconInstalliert: 'In der installierten App geht das nicht. Öffne diese Adresse in Safari und wähle dort „Zum Home-Bildschirm“:',
+    adresseKopieren: 'Adresse kopieren',
+    adresseKopiert: 'Kopiert ✓',
     farben: 'Hell und Dunkel folgen automatisch dem System.',
   },
 } as const
