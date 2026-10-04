@@ -5,8 +5,9 @@
   import Dolde from '../components/Dolde.svelte';
   import FotoBild from '../components/FotoBild.svelte';
   import ExportDialog from '../components/ExportDialog.svelte';
+  import { hinweisNoetig } from '../lib/backupFormat';
   import { db } from '../lib/db';
-  import { formatZeitraum } from '../lib/datum';
+  import { formatZeitraum, heuteIso } from '../lib/datum';
   import { gruppiere, navigationsIds } from '../lib/getraenke';
   import { holeEingeklappt, holeReiter, MERKLISTE, setzeEingeklappt, setzeReiter, type Reiter } from '../lib/klappZustand';
   import type { Getraenk, Hersteller, Tasting } from '../lib/model';
@@ -46,6 +47,28 @@
   }
   let hatCover = $state(false);
   let exportOffen = $state(false);
+  let nurBackup = $state(false);
+  let backupHinweis = $state(false);
+  let hinweisGeprueft = false;
+
+  // Backup-Hinweis: höchstens einmal pro Tasting und Tag; wird beim ersten Laden der Daten entschieden
+  async function hinweisPruefen(t: Tasting, g: Getraenk[]) {
+    hinweisGeprueft = true;
+    const fotos = await db.fotos.where('bezugId').anyOf(g.map((x) => x.id)).toArray();
+    if (!hinweisNoetig(t, g, fotos, heuteIso())) return;
+    backupHinweis = true;
+    await db.tastings.update(t.id, { hinweisAm: heuteIso() });
+  }
+
+  $effect(() => {
+    if (daten?.tasting && !hinweisGeprueft) hinweisPruefen(daten.tasting, daten.getraenke).catch((f) => console.error('Backup-Hinweis fehlgeschlagen', f));
+  });
+
+  function jetztSichern() {
+    backupHinweis = false;
+    nurBackup = true;
+    exportOffen = true;
+  }
 
   $effect(() => {
     const abo = liveQuery(async () => ({
@@ -93,7 +116,7 @@
   <div class="kopf">
     <button class="ib" onclick={onZurueck} aria-label={de.allgemein.zurueck}>‹</button>
     <span style="flex: 1"></span>
-    <button class="ib" onclick={() => (exportOffen = true)} aria-label={de.export.titel}>⇪</button>
+    <button class="ib" onclick={() => { nurBackup = false; exportOffen = true; }} aria-label={de.export.titel}>⇪</button>
     <button class="ib" onclick={() => onBearbeiten(tastingId)} aria-label={de.allgemein.bearbeiten}>✎</button>
   </div>
 
@@ -111,6 +134,17 @@
         </p>
       </div>
     </div>
+
+    {#if backupHinweis}
+      <div class="backuphinweis" role="status">
+        <span class="bh-text">
+          <b>{de.backup.hinweisTitel}</b>
+          <span>{de.backup.hinweisText}</span>
+        </span>
+        <button class="bh-knopf" onclick={jetztSichern}>{de.backup.hinweisJetzt}</button>
+        <button class="ib plain bh-zu" onclick={() => (backupHinweis = false)} aria-label={de.backup.hinweisSchliessen}>✕</button>
+      </div>
+    {/if}
 
     <div class="reiter" role="tablist">
       <button role="tab" aria-selected={reiter === 'getraenke'} class:an={reiter === 'getraenke'} onclick={() => reiterWaehlen('getraenke')}>{t.getraenke}</button>
@@ -195,7 +229,7 @@
 </div>
 
 {#if tasting && exportOffen}
-  <ExportDialog {tasting} onSchliessen={() => (exportOffen = false)} />
+  <ExportDialog {tasting} {nurBackup} onSchliessen={() => (exportOffen = false)} />
 {/if}
 
 {#if tasting && reiter === 'getraenke'}
@@ -205,6 +239,33 @@
 {/if}
 
 <style>
+  .backuphinweis {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding: 10px 6px 10px 14px;
+    border: 2px dashed var(--ink);
+    border-radius: var(--radius);
+    background: var(--hop-soft);
+    font-size: 14px;
+    line-height: 1.3;
+  }
+  .bh-text {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    gap: 2px;
+  }
+  .bh-knopf {
+    flex: none;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 2px solid var(--ink);
+    border-radius: 99px;
+    background: var(--card);
+    font-weight: 700;
+  }
   .hero {
     display: flex;
     gap: 14px;

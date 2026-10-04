@@ -1,4 +1,8 @@
 <script lang="ts">
+  import { liveQuery } from 'dexie';
+  import BackupImport from '../components/BackupImport.svelte';
+  import BackupKarte from '../components/BackupKarte.svelte';
+  import { formatZeitpunkt } from '../lib/datum';
   import { db, ladeEinstellungen } from '../lib/db';
   import type { Einstellungen, Stil } from '../lib/model';
   import { de } from '../lib/texte/de';
@@ -31,6 +35,15 @@
   }
 
   laden();
+
+  let gesamtSicherung = $state<string | undefined>(undefined);
+  $effect(() => {
+    const abo = liveQuery(() => db.einstellungen.get('global')).subscribe({
+      next: (e) => (gesamtSicherung = e?.letzteGesamtsicherung),
+      error: (fehler) => console.error('Einstellungen laden fehlgeschlagen', fehler),
+    });
+    return () => abo.unsubscribe();
+  });
 
   async function speichern() {
     if (!einstellungen) return;
@@ -95,6 +108,15 @@
       <span class="hinweis nur-text">{t.verkosterHinweis}</span>
     </label>
 
+    <h2 class="abschnitt">{t.sicherungTitel}</h2>
+    <div class="sicherung">
+      <p class="hinweis">
+        {gesamtSicherung ? `${de.backup.gesamtZuletzt}: ${formatZeitpunkt(gesamtSicherung)}` : de.backup.nochNie}
+      </p>
+      <BackupKarte umfang="alle" name={de.app.name} />
+      <BackupImport />
+    </div>
+
     <h2 class="abschnitt">{t.stile}</h2>
     <ul class="stile">
       {#each sortierteStile as stil (stil.id)}
@@ -147,6 +169,11 @@
 </div>
 
 <style>
+  .sicherung {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
   .stile {
     list-style: none;
     margin: 0 0 12px;

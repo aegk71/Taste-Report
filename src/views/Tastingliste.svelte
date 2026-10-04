@@ -4,8 +4,8 @@
   import Dolde from '../components/Dolde.svelte';
   import FotoBild from '../components/FotoBild.svelte';
   import Wortmarke from '../components/Wortmarke.svelte';
-  import { db, tastingKennzahlen, type TastingKennzahlen } from '../lib/db';
-  import { formatZeitraum } from '../lib/datum';
+  import { db, ladeEinstellungen, tastingKennzahlen, type TastingKennzahlen } from '../lib/db';
+  import { formatZeitpunkt, formatZeitraum } from '../lib/datum';
   import type { Tasting } from '../lib/model';
   import { de } from '../lib/texte/de';
 
@@ -23,6 +23,17 @@
   }
 
   let eintraege = $state<Eintrag[] | null>(null);
+  let startHinweis = $state(false);
+
+  // Einstellungen anlegen (beim allerersten Start inkl. Antrag auf dauerhaften Speicher) und Start-Hinweis prüfen
+  ladeEinstellungen()
+    .then((e) => (startHinweis = !e.startHinweisGesehen))
+    .catch((fehler) => console.error('Einstellungen laden fehlgeschlagen', fehler));
+
+  async function startHinweisSchliessen() {
+    startHinweis = false;
+    await db.einstellungen.update('global', { startHinweisGesehen: true });
+  }
 
   $effect(() => {
     const abo = liveQuery(async () => {
@@ -42,6 +53,14 @@
     <h1 class="titel">{de.app.name}</h1>
     <button class="ib" onclick={onEinstellungen} aria-label={de.allgemein.einstellungen}>⚙</button>
   </div>
+
+  {#if startHinweis}
+    <div class="karte starthinweis" role="note">
+      <b>{de.backup.startTitel}</b>
+      <p>{de.backup.startText}</p>
+      <button class="knopf sekundaer" onclick={startHinweisSchliessen}>{de.backup.startOk}</button>
+    </div>
+  {/if}
 
   <h2 class="abschnitt">{t.titel}</h2>
 
@@ -73,6 +92,9 @@
                   ? ` · ${t.vorgemerkt(kennzahlen.vorgemerkt)}`
                   : ''}
               </span>
+              <span class="meta">
+                {tasting.letzteSicherung ? de.backup.zuletzt(formatZeitpunkt(tasting.letzteSicherung)) : de.backup.nochNie}
+              </span>
               {#if kennzahlen.durchschnitt !== undefined}
                 <Bewertung wert={kennzahlen.durchschnitt} />
               {/if}
@@ -89,6 +111,17 @@
 </div>
 
 <style>
+  .starthinweis {
+    display: grid;
+    gap: 8px;
+    justify-items: start;
+    margin-bottom: 8px;
+    background: var(--hop-soft);
+  }
+  .starthinweis p {
+    font-size: 15px;
+    line-height: 1.35;
+  }
   .titel {
     text-align: right;
     font-size: 17px;

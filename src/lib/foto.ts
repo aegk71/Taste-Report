@@ -40,6 +40,20 @@ export async function verarbeiteFoto(datei: File): Promise<FotoEntwurf> {
   }
 }
 
+/** Kleine Vorschau aus einem bereits komprimierten Foto (z. B. beim Backup-Import). */
+export async function vorschauAusBlob(blob: Blob): Promise<Blob | undefined> {
+  try {
+    const bitmap = await createImageBitmap(blob);
+    try {
+      return (await alsJpeg(bitmap, VORSCHAU_KANTE, VORSCHAU_QUALITAET)).blob;
+    } finally {
+      bitmap.close();
+    }
+  } catch {
+    return undefined;
+  }
+}
+
 // Fotos aus der IndexedDB lassen sich in Safari/WebKit manchmal nicht lesen
 // ("An error occured reading the Blob argument", "The object can not be found
 // here."). Neuaufbau über arrayBuffer() mit ein paar Wiederholversuchen behebt

@@ -23,3 +23,8 @@ export function formatZeitraum(von: string, bis?: string): string {
   if (jv === jb) return `${tv}. ${MONATE_KURZ[mv - 1]} – ${tb}. ${MONATE_KURZ[mb - 1]} ${jv}`;
   return `${tv}. ${MONATE_KURZ[mv - 1]} ${jv} – ${tb}. ${MONATE_KURZ[mb - 1]} ${jb}`;
 }
+
+/** "04.10.2026, 14:30" aus einem ISO-Zeitpunkt */
+export function formatZeitpunkt(iso: string): string {
+  return new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+}

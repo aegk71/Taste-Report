@@ -13,6 +13,8 @@ export interface Einstellungen {
   verkoster: string;
   stile: Stil[];
   letzteGesamtsicherung?: string;
+  /** Hinweis "Daten liegen nur auf diesem Gerät" wurde weggetippt */
+  startHinweisGesehen?: boolean;
 }
 
 export interface Tasting {

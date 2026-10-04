@@ -3,11 +3,12 @@
   import { heuteIso } from '../lib/datum';
   import { exportDateiname } from '../lib/export/dateiname';
   import { dateiBereitstellen } from '../lib/export/teilen';
+  import BackupKarte from './BackupKarte.svelte';
   import type { BerichtErgebnis } from '../lib/export/pdfBericht';
   import type { Tasting } from '../lib/model';
   import { de } from '../lib/texte/de';
 
-  let { tasting, onSchliessen }: { tasting: Tasting; onSchliessen: () => void } = $props();
+  let { tasting, onSchliessen, nurBackup = false }: { tasting: Tasting; onSchliessen: () => void; nurBackup?: boolean } = $props();
 
   const t = de.export;
 
@@ -21,6 +22,8 @@
   let vorschauFertig = $state(false);
   let abgebrochen = false;
   let excelStatus = $state<'leer' | 'arbeitet' | 'fehler'>('leer');
+  let backupArbeitet = $state(false);
+  const beschaeftigt = $derived(phase === 'arbeitet' || excelStatus === 'arbeitet' || backupArbeitet);
 
   onDestroy(() => (abgebrochen = true));
 
@@ -85,11 +88,11 @@
   </div>
 {:else}
   <div class="blatt" role="dialog" aria-modal="true" aria-label={t.titel}>
-    <button class="hintergrund" onclick={onSchliessen} disabled={phase === 'arbeitet' || excelStatus === 'arbeitet'} aria-label={t.schliessen}></button>
+    <button class="hintergrund" onclick={onSchliessen} disabled={beschaeftigt} aria-label={t.schliessen}></button>
     <div class="inhalt">
       <div class="blattkopf">
         <h3>{t.titel}</h3>
-        <button class="ib plain" onclick={onSchliessen} disabled={phase === 'arbeitet' || excelStatus === 'arbeitet'} aria-label={t.schliessen}>✕</button>
+        <button class="ib plain" onclick={onSchliessen} disabled={beschaeftigt} aria-label={t.schliessen}>✕</button>
       </div>
 
       {#if phase === 'arbeitet'}
@@ -99,6 +102,7 @@
           <span class="balken"><i style:width="{fortschritt.gesamt > 0 ? (fortschritt.fertig / fortschritt.gesamt) * 100 : 5}%"></i></span>
         </div>
       {:else}
+        {#if !nurBackup}
         <div class="karte option">
           <span class="ico">📄</span>
           <span class="text"><b>{t.pdfTitel}</b><small>{t.pdfText}</small></span>
@@ -112,7 +116,7 @@
           <button class="schalter" role="switch" aria-checked={nurBewertete} aria-label={t.nurBewertete} onclick={() => (nurBewertete = !nurBewertete)}></button>
         </div>
         {#if phase === 'fehler'}<p class="fehler">{t.fehler}</p>{/if}
-        <button class="knopf block" onclick={erstellen} disabled={excelStatus === 'arbeitet'}>{phase === 'fehler' ? t.nochmal : t.erstellen}</button>
+        <button class="knopf block" onclick={erstellen} disabled={beschaeftigt}>{phase === 'fehler' ? t.nochmal : t.erstellen}</button>
 
         <hr />
         <div class="karte option">
@@ -120,9 +124,13 @@
           <span class="text"><b>{t.excelTitel}</b><small>{t.excelText}</small></span>
         </div>
         {#if excelStatus === 'fehler'}<p class="fehler">{t.excelFehler}</p>{/if}
-        <button class="knopf sekundaer block" onclick={excelTeilen} disabled={excelStatus === 'arbeitet'}>
+        <button class="knopf sekundaer block" onclick={excelTeilen} disabled={beschaeftigt}>
           {excelStatus === 'arbeitet' ? t.excelArbeitet : excelStatus === 'fehler' ? t.nochmal : t.excelErstellen}
         </button>
+
+        <hr />
+        {/if}
+        <BackupKarte umfang={{ tastingId: tasting.id }} name={tasting.name} bind:gesperrt={backupArbeitet} />
       {/if}
     </div>
   </div>
@@ -153,6 +161,8 @@
     max-width: 560px;
     width: 100%;
     margin: 0 auto;
+    max-height: 92dvh;
+    overflow-y: auto;
   }
   .blattkopf {
     display: flex;

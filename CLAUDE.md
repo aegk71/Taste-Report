@@ -195,14 +195,19 @@ Alkohol (% Vol.) | Menge (L) | Preis (€) | Notiz | Zustand | probiert am. Auto
 - Inhalt: `backup.json` (`schemaVersion`, ein oder mehrere Tastings mit Hersteller, Getränken, Foto-Metadaten; bei
   „Alles sichern“ zusätzlich Einstellungen) und `fotos/{fotoId}.jpg`.
 - Import: bestehende `id` → Rückfrage (ersetzen / als Kopie mit neuen IDs). Importiert alles ohne Datenverlust.
-- Beim Sichern `letzteSicherung` (Tasting) bzw. `letzteGesamtsicherung` setzen.
+- Beim Sichern `letzteSicherung` (Tasting) bzw. `letzteGesamtsicherung` setzen, **erst nachdem** die Datei geteilt/gespeichert wurde (Abbruch im Teilen-Menü = nicht gesichert). `geaendertAm` bleibt dabei unverändert. „Alles sichern“ vermerkt auch bei jedem Tasting `letzteSicherung`.
+- Zwei Schritte im UI (`BackupKarte.svelte`): erst „Backup erstellen“, dann „Teilen / Speichern“ (Safari erlaubt das Teilen-Menü nur kurz nach einer Berührung, das Packen vieler Fotos kann länger dauern). Fotos werden ohne weitere Kompression (STORE) abgelegt. Nicht lesbare Fotos werden übersprungen und gemeldet.
+- `backup.json` enthält zusätzlich `stile` (bei „Alles“ alle, sonst die genutzten), `art` (`tasting`|`alle`), `erstelltAm`; Vorschaubilder werden nicht gesichert, sondern beim Import neu erzeugt.
+- Import (Einstellungen → „Backup einspielen …“, `BackupImport.svelte`): Datei wird geprüft (Format, Version, Verweise); nur bei bereits vorhandener Tasting-ID kommt die Rückfrage **Als Kopie (Vorgabe) / Vorhandene ersetzen**, alle anderen werden unverändert übernommen. Kopie: neue IDs, Name + „ (Kopie)“. Alles in einer Transaktion, bei Fehler bleibt der Bestand unverändert. Stile werden über den Namen abgeglichen (fehlende ergänzt, Stil-IDs der Biere umgeschrieben); der Standard-Verkoster wird nur übernommen, wenn lokal leer.
 
 ## 8. Datensicherheit auf dem iPhone
 
 - Beim ersten Start `navigator.storage.persist()` anfordern, Ergebnis in den Einstellungen anzeigen. Kurzer Hinweis beim ersten Start.
 - Hinweis in der App: Daten liegen nur auf diesem Gerät, Icon löschen/neu anlegen oder Website-Daten löschen = Daten weg.
-- **Backup-Hinweis** (dezent, wegtippbar): wenn seit der letzten Sicherung mindestens 10 Getränke neu oder geändert wurden oder
-  ein Fazit eingetragen, aber nicht gesichert ist. Höchstens einmal pro Tasting und Tag (`hinweisAm`). Direkt mit Teilen.
+- **Backup-Hinweis** (dezent, wegtippbar): wenn seit der letzten Sicherung mindestens 10 Getränke neu oder geändert wurden (neue Fotos zählen mit)
+  oder ein Fazit eingetragen, aber nicht gesichert ist. Höchstens einmal pro Tasting und Tag (`hinweisAm`), Entscheidung beim Öffnen der Tasting-Übersicht
+  (Regel: `hinweisNoetig` in `src/lib/backupFormat.ts`, getestet). „Jetzt sichern“ öffnet den Export-Dialog nur mit der Backup-Karte.
+- Start-Hinweis „Daten liegen nur auf diesem Gerät“ in der Tasting-Liste, wegtippbar (`Einstellungen.startHinweisGesehen`). Der dauerhafte Speicher wird bei jedem Start erneut angefragt, solange er nicht gewährt ist.
 - In Einstellungen und Tasting-Liste: „Zuletzt gesichert: …“.
 
 ## 9. Leitplanken aus der Vorlage
@@ -214,6 +219,7 @@ Alkohol (% Vol.) | Menge (L) | Preis (€) | Notiz | Zustand | probiert am. Auto
   statt den Export abzubrechen.
 - Installierte iOS-PWA läuft in WKWebView: PDF-Vorschau nur über pdfjs (siehe oben).
 - Diktierfunktion braucht keinen Code (iOS-Tastaturdiktat in den Textfeldern).
+- Daten, die direkt in IndexedDB gehen (z. B. Import), nicht in `$state` halten, sondern `$state.raw` (Proxys lassen sich nicht speichern: DataCloneError).
 - Auswertungslogik (`src/lib/auswertung.ts`) ist rein und mit `npm test` (Node, `tests/`) geprüft; Regeln dort ändern nur zusammen mit den Tests.
 - Testen: lokaler Vite-Server per Browser-Tools bedienen, Testdaten direkt in IndexedDB anlegen, erzeugte xlsx/pdf **parsen**
   statt Screenshots auszuwerten. Testbilder: `belgian ale.jpg`, `white easter 1.jpg`, `WhatsApp Image … .jpeg`.

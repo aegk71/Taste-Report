@@ -19,6 +19,8 @@
   let ansicht = $state<Ansicht>({ name: 'liste' });
 
   offlineStatusStarten();
+  // Dauerhaften Speicher bei jedem Start erneut anfragen, solange er nicht gewährt ist (Safari entscheidet selbst)
+  navigator.storage?.persisted?.().then((p) => (p ? undefined : navigator.storage.persist?.())).catch(() => undefined);
   verwaisteFotosAufraeumen().catch((fehler) => console.error('Foto-Aufräumen fehlgeschlagen', fehler));
 </script>
 
