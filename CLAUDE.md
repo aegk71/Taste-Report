@@ -187,8 +187,8 @@ Dateinamen: `{Tastingname}_{Typ}_{JJJJ-MM-TT}.pdf|.xlsx|.zip` (Sonderzeichen ber
 
 ### Excel (ExcelJS, schlank)
 
-Kopfbereich (Tasting, Datum, Ort, Verkoster), eine Tabelle: Hersteller | Standort | Getränk | Stil | Bewertung (Zahl) |
-Alkohol (% Vol.) | Menge (L) | Preis (€) | Notiz | Zustand | probiert am. Autofilter, fixierte Kopfzeile, Datumsformat TT.MM.JJJJ. Keine Bilder.
+Kopfbereich (Tasting, Untertitel, Datum, Ort, Verkoster; leere Felder entfallen), ein Blatt „Getränke“, eine Tabelle (alle Getränke, auch vorgemerkte; Hersteller alphabetisch, darin Erfassungsreihenfolge): Hersteller | Standort | Getränk | Stil | Bewertung (Zahl) |
+Alkohol (% Vol.) | Menge (L) | Preis (€) | Notiz | Zustand | probiert am. Autofilter, fixierte Kopfzeile, Datumsformat TT.MM.JJJJ (echte Datumszellen), Bewertung/Alkohol/Menge/Preis als Zahlen (leer = nicht angegeben, 0 bleibt 0), Texte nie als Formel. Keine Bilder. Erzeugung und Teilen direkt aus dem Export-Dialog (`ExportDialog.svelte`).
 
 ### ZIP-Backup und Import
 
@@ -257,5 +257,6 @@ Backup je Tasting und gesamt, Import (ersetzen/Kopie), Persistenz-Hinweis, Backu
 ## 11. Später (nicht ohne Auftrag)
 
 - Zusammenführen mehrerer Verkoster (Gemeinschafts-Rangliste über Datei-Import)
+- Zweite Berichtsvariante im Zeitungsstil (weniger analytisch: Schlagzeile, Spalten, Notizen als Text/Zitate, Bilder mit Unterschrift)
 - Berichtssprache Englisch, weitere Bewertungskategorien (Aussehen, Geruch, Geschmack, Abgang)
 - Mehrgeräte-Sync

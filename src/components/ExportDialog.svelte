@@ -20,6 +20,7 @@
   let seitenBilder = $state<string[]>([]);
   let vorschauFertig = $state(false);
   let abgebrochen = false;
+  let excelStatus = $state<'leer' | 'arbeitet' | 'fehler'>('leer');
 
   onDestroy(() => (abgebrochen = true));
 
@@ -43,6 +44,20 @@
     } catch (fehler) {
       console.error('Bericht erstellen fehlgeschlagen', fehler);
       if (!abgebrochen) phase = ergebnis ? 'fertig' : 'fehler';
+    }
+  }
+
+  async function excelTeilen() {
+    excelStatus = 'arbeitet';
+    try {
+      const { tastingAlsExcel, EXCEL_MIME } = await import('../lib/export/excel');
+      const blob = await tastingAlsExcel(tasting.id);
+      if (abgebrochen) return;
+      excelStatus = 'leer';
+      await dateiBereitstellen(blob, exportDateiname(tasting.name, 'Daten', heuteIso(), 'xlsx'), EXCEL_MIME);
+    } catch (fehler) {
+      console.error('Excel erstellen fehlgeschlagen', fehler);
+      if (!abgebrochen) excelStatus = 'fehler';
     }
   }
 
@@ -70,11 +85,11 @@
   </div>
 {:else}
   <div class="blatt" role="dialog" aria-modal="true" aria-label={t.titel}>
-    <button class="hintergrund" onclick={onSchliessen} disabled={phase === 'arbeitet'} aria-label={t.schliessen}></button>
+    <button class="hintergrund" onclick={onSchliessen} disabled={phase === 'arbeitet' || excelStatus === 'arbeitet'} aria-label={t.schliessen}></button>
     <div class="inhalt">
       <div class="blattkopf">
         <h3>{t.titel}</h3>
-        <button class="ib plain" onclick={onSchliessen} disabled={phase === 'arbeitet'} aria-label={t.schliessen}>✕</button>
+        <button class="ib plain" onclick={onSchliessen} disabled={phase === 'arbeitet' || excelStatus === 'arbeitet'} aria-label={t.schliessen}>✕</button>
       </div>
 
       {#if phase === 'arbeitet'}
@@ -97,7 +112,17 @@
           <button class="schalter" role="switch" aria-checked={nurBewertete} aria-label={t.nurBewertete} onclick={() => (nurBewertete = !nurBewertete)}></button>
         </div>
         {#if phase === 'fehler'}<p class="fehler">{t.fehler}</p>{/if}
-        <button class="knopf block" onclick={erstellen}>{phase === 'fehler' ? t.nochmal : t.erstellen}</button>
+        <button class="knopf block" onclick={erstellen} disabled={excelStatus === 'arbeitet'}>{phase === 'fehler' ? t.nochmal : t.erstellen}</button>
+
+        <hr />
+        <div class="karte option">
+          <span class="ico">📊</span>
+          <span class="text"><b>{t.excelTitel}</b><small>{t.excelText}</small></span>
+        </div>
+        {#if excelStatus === 'fehler'}<p class="fehler">{t.excelFehler}</p>{/if}
+        <button class="knopf sekundaer block" onclick={excelTeilen} disabled={excelStatus === 'arbeitet'}>
+          {excelStatus === 'arbeitet' ? t.excelArbeitet : excelStatus === 'fehler' ? t.nochmal : t.excelErstellen}
+        </button>
       {/if}
     </div>
   </div>
@@ -161,6 +186,13 @@
   .text small {
     color: var(--muted);
     font-size: 13px;
+  }
+  hr {
+    width: 100%;
+    margin: 4px 0;
+    border: 0;
+    border-top: 1.5px dashed var(--line, var(--ink));
+    opacity: 0.4;
   }
   .zeile {
     display: flex;

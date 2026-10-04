@@ -4,7 +4,7 @@
   import Bewertung from '../components/Bewertung.svelte';
   import Dolde from '../components/Dolde.svelte';
   import FotoBild from '../components/FotoBild.svelte';
-  import PdfExport from '../components/PdfExport.svelte';
+  import ExportDialog from '../components/ExportDialog.svelte';
   import { db } from '../lib/db';
   import { formatZeitraum } from '../lib/datum';
   import { gruppiere, navigationsIds } from '../lib/getraenke';
@@ -195,7 +195,7 @@
 </div>
 
 {#if tasting && exportOffen}
-  <PdfExport {tasting} onSchliessen={() => (exportOffen = false)} />
+  <ExportDialog {tasting} onSchliessen={() => (exportOffen = false)} />
 {/if}
 
 {#if tasting && reiter === 'getraenke'}
