@@ -4,6 +4,7 @@
   import Bewertung from '../components/Bewertung.svelte';
   import Dolde from '../components/Dolde.svelte';
   import FotoBild from '../components/FotoBild.svelte';
+  import PdfExport from '../components/PdfExport.svelte';
   import { db } from '../lib/db';
   import { formatZeitraum } from '../lib/datum';
   import { gruppiere, navigationsIds } from '../lib/getraenke';
@@ -44,6 +45,7 @@
     setzeReiter(tastingId, neu);
   }
   let hatCover = $state(false);
+  let exportOffen = $state(false);
 
   $effect(() => {
     const abo = liveQuery(async () => ({
@@ -91,6 +93,7 @@
   <div class="kopf">
     <button class="ib" onclick={onZurueck} aria-label={de.allgemein.zurueck}>‹</button>
     <span style="flex: 1"></span>
+    <button class="ib" onclick={() => (exportOffen = true)} aria-label={de.export.titel}>⇪</button>
     <button class="ib" onclick={() => onBearbeiten(tastingId)} aria-label={de.allgemein.bearbeiten}>✎</button>
   </div>
 
@@ -190,6 +193,10 @@
     <p class="hinweis">Tasting nicht gefunden.</p>
   {/if}
 </div>
+
+{#if tasting && exportOffen}
+  <PdfExport {tasting} onSchliessen={() => (exportOffen = false)} />
+{/if}
 
 {#if tasting && reiter === 'getraenke'}
   <div class="unterzeile">

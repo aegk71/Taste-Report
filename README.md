@@ -12,6 +12,7 @@ npm run check    # Typprüfung
 npm test         # Unit-Tests der Auswertung (Node)
 npm run build    # Produktions-Build nach dist/
 npm run icons    # Icons neu erzeugen (benötigt Python + pymupdf)
+python tools/schriften.py   # TTF-Schriften fürs PDF neu erzeugen (Python + fonttools, brotli)
 ```
 
 Projektregeln, Datenmodell und Phasenplan stehen in [CLAUDE.md](CLAUDE.md).

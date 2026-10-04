@@ -181,7 +181,8 @@ Dateinamen: `{Tastingname}_{Typ}_{JJJJ-MM-TT}.pdf|.xlsx|.zip` (Sonderzeichen ber
 - **Herstellerseiten:** Kopf (Hersteller · Standort · Ø-Wert), je Getränk eine Karte: Titelbild (oder Dolde), Name, Stil-Tag,
   Dolden + Zahl, % Vol./Menge/Preis, Notiz, weitere Fotos klein. Karten nicht über Seitenumbrüche teilen.
 - Vorgemerkte Getränke erscheinen nicht im Bericht. Fußzeile „Taste Report · Seite x von y“.
-- Schriften als TTF einbetten (Alfa Slab One, Source Sans 3). Dolden als Vektorpfad zeichnen.
+- Schriften als TTF einbetten (Alfa Slab One, Source Sans 3; `public/fonts/*.ttf`, erzeugt mit `tools/schriften.py`). Dolden und Wortmarke als Vektorpfad zeichnen. Zeichen außerhalb der Schriften (Emoji u. ä.) werden entfernt, Akzentbuchstaben auf den Grundbuchstaben zurückgeführt.
+- Fotos im Bericht quadratisch zugeschnitten (object-fit: cover) und für das PDF auf ca. 900 px verkleinert.
 - Vorschau in der App mit **pdfjs auf Canvas/Bilder** (nicht per `<iframe>`, iOS-PWA zeigt sonst nur Seite 1).
 
 ### Excel (ExcelJS, schlank)
