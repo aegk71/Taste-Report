@@ -1,6 +1,7 @@
 <script lang="ts">
   import { offlineStatusStarten } from './lib/offline.svelte';
   import Einstellungen from './views/Einstellungen.svelte';
+  import GetraenkForm from './views/GetraenkForm.svelte';
   import TastingForm from './views/TastingForm.svelte';
   import Tastingliste from './views/Tastingliste.svelte';
   import TastingUebersicht from './views/TastingUebersicht.svelte';
@@ -11,6 +12,7 @@
     | { name: 'liste' }
     | { name: 'tastingForm'; tastingId: string | null; ruecksprung: Ruecksprung }
     | { name: 'tastingUebersicht'; tastingId: string }
+    | { name: 'getraenkForm'; tastingId: string; getraenkId: string | null; ids: string[] }
     | { name: 'einstellungen' };
 
   let ansicht = $state<Ansicht>({ name: 'liste' });
@@ -38,7 +40,22 @@
     onZurueck={() => (ansicht = { name: 'liste' })}
     onBearbeiten={(tastingId) =>
       (ansicht = { name: 'tastingForm', tastingId, ruecksprung: { name: 'tastingUebersicht', tastingId } })}
+    onNeuesBier={(tastingId, ids) => (ansicht = { name: 'getraenkForm', tastingId, getraenkId: null, ids })}
+    onBierOeffnen={(tastingId, getraenkId, ids) => (ansicht = { name: 'getraenkForm', tastingId, getraenkId, ids })}
   />
+{:else if ansicht.name === 'getraenkForm'}
+  {@const tastingIdAktuell = ansicht.tastingId}
+  {@const idsAktuell = ansicht.ids}
+  {#key ansicht.getraenkId}
+    <GetraenkForm
+      tastingId={tastingIdAktuell}
+      getraenkId={ansicht.getraenkId}
+      ids={idsAktuell}
+      onFertig={() => (ansicht = { name: 'tastingUebersicht', tastingId: tastingIdAktuell })}
+      onNavigieren={(getraenkId) =>
+        (ansicht = { name: 'getraenkForm', tastingId: tastingIdAktuell, getraenkId, ids: idsAktuell })}
+    />
+  {/key}
 {:else if ansicht.name === 'einstellungen'}
   <Einstellungen onZurueck={() => (ansicht = { name: 'liste' })} />
 {/if}

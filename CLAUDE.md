@@ -145,7 +145,7 @@ Dexie-DB `taste-report`: `einstellungen: 'id'`, `tastings: 'id, datumVon, geaend
    alphabetisch als auf-/zuklappbare Gruppen (Name, Standort, Anzahl, Ø-Wert) mit Getränkezeilen (Titelbild, Name, Stil, Wert).
    „Alle auf-/zuklappen“. Der Zustand der Gruppen bleibt beim Zurückspringen erhalten. Unten fixiert: **„+ Bier“**. Export oben rechts.
 4. **Getränk erfassen/bearbeiten** – **ein Bildschirm, Autosave, kein Speichern-Knopf.** Reihenfolge: Zustand (Vorgemerkt|Probiert),
-   Hersteller (Autovervollständigung, Standort optional), Name, Stil (Chips), Bewertung (Regler), Fotos (bis 3), Notiz (mit
+   Hersteller (Autovervollständigung, Standort optional), Name, Stil (Chips: die ersten 8 aktiven Stile in der Reihenfolge der Einstellungen, „alle …“ zeigt den Rest), Bewertung (Regler), Fotos (bis 3), Notiz (mit
    Kopier-Icon), eingeklappt „Mehr Angaben“ (ABV, Preis), „Getränk löschen“. Kopf: ‹ zurück, „Bier x von y“, ↑ ↓ zum vorherigen/
    nächsten Getränk (Reihenfolge wie in der Übersicht).
    Autosave: ein neues Getränk wird erst angelegt, wenn Hersteller und Name gefüllt sind; danach speichert jede Änderung
