@@ -2,6 +2,7 @@
   import { liveQuery } from 'dexie';
   import Bewertung from '../components/Bewertung.svelte';
   import Dolde from '../components/Dolde.svelte';
+  import FotoBild from '../components/FotoBild.svelte';
   import Wortmarke from '../components/Wortmarke.svelte';
   import { db, tastingKennzahlen, type TastingKennzahlen } from '../lib/db';
   import { formatZeitraum } from '../lib/datum';
@@ -57,7 +58,11 @@
       {#each eintraege as { tasting, kennzahlen } (tasting.id)}
         <li>
           <button class="karte tasting" onclick={() => onOeffnen(tasting.id)}>
-            <span class="cover"><Dolde hoehe={46} /></span>
+            <span class="cover">
+              <FotoBild art="cover" bezugId={tasting.id} klasse="coverbild">
+                {#snippet platzhalter()}<Dolde hoehe={46} />{/snippet}
+              </FotoBild>
+            </span>
             <span class="text">
               <strong>{tasting.name}</strong>
               <span class="meta">
@@ -117,6 +122,12 @@
     border: 2px solid var(--ink);
     background: var(--ocker);
     color: color-mix(in srgb, var(--ink) 25%, transparent);
+    overflow: hidden;
+  }
+  .cover :global(.coverbild) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
   .text {
     display: grid;

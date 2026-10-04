@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { verwaisteFotosAufraeumen } from './lib/fotos';
   import { offlineStatusStarten } from './lib/offline.svelte';
   import Einstellungen from './views/Einstellungen.svelte';
   import GetraenkForm from './views/GetraenkForm.svelte';
@@ -18,6 +19,7 @@
   let ansicht = $state<Ansicht>({ name: 'liste' });
 
   offlineStatusStarten();
+  verwaisteFotosAufraeumen().catch((fehler) => console.error('Foto-Aufräumen fehlgeschlagen', fehler));
 </script>
 
 {#if ansicht.name === 'liste'}

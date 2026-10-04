@@ -161,8 +161,10 @@ Dexie-DB `taste-report`: `einstellungen: 'id'`, `tastings: 'id, datumVon, geaend
 
 ### Foto-Verhalten
 
-- Aufnahme über `<input type="file" accept="image/*" capture="environment">` und zusätzlich Auswahl aus der Mediathek.
+- Ein Datei-Feld `<input type="file" accept="image/*" multiple>` **ohne** `capture`: iOS bietet dann „Foto aufnehmen“, „Fotomediathek“ und „Dateien“ an (wie in der Vorlage). Mehrfachauswahl füllt die freien Plätze.
 - Sofort komprimieren (lange Kante max. 1600 px, JPEG 0,8, Ausrichtung über `createImageBitmap(file, { imageOrientation: 'from-image' })`).
+- Zusätzlich je Foto eine kleine Vorschau (lange Kante 320 px) für Listen, damit die Übersicht nicht zig große Bilder dekodiert.
+- Fotos sind schon vor Hersteller/Name möglich; ohne gespeichertes Bier werden sie beim Verlassen verworfen, verwaiste Fotos räumt der App-Start auf.
 - Bis zu 3 Fotos je Getränk. Das erste ist das **Titelbild**, per Antippen änderbar (Reihenfolge tauschen). Je Tasting ein Cover-Bild.
 
 ## 7. Export

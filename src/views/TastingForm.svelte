@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { db, ladeEinstellungen, tastingHartLoeschen } from '../lib/db';
+  import { blobSicherLesen, verarbeiteFoto, type FotoEntwurf } from '../lib/foto';
+  import { coverSetzen, fotosSortiert } from '../lib/fotos';
   import { heuteIso } from '../lib/datum';
   import type { Tasting } from '../lib/model';
   import { de } from '../lib/texte/de';
@@ -28,6 +31,44 @@
   let versucht = $state(false);
   let bestehend = $state<Tasting | undefined>();
 
+  // Cover-Bild: Änderungen werden erst mit "Speichern" übernommen, "Abbrechen" verwirft sie.
+  let coverUrl = $state<string | null>(null);
+  let coverEntwurf: FotoEntwurf | null = null;
+  let coverEntfernt = false;
+  let coverBeschaeftigt = $state(false);
+  let coverFehler = $state('');
+
+  function coverUrlSetzen(blob: Blob | null) {
+    if (coverUrl) URL.revokeObjectURL(coverUrl);
+    coverUrl = blob ? URL.createObjectURL(blob) : null;
+  }
+
+  onDestroy(() => coverUrlSetzen(null));
+
+  async function coverGewaehlt(e: Event & { currentTarget: HTMLInputElement }) {
+    const datei = e.currentTarget.files?.[0];
+    e.currentTarget.value = '';
+    if (!datei) return;
+    coverBeschaeftigt = true;
+    coverFehler = '';
+    try {
+      coverEntwurf = await verarbeiteFoto(datei);
+      coverEntfernt = false;
+      coverUrlSetzen(coverEntwurf.vorschau);
+    } catch (fehler) {
+      console.error('Cover verarbeiten fehlgeschlagen', fehler);
+      coverFehler = de.fotos.fehler;
+    } finally {
+      coverBeschaeftigt = false;
+    }
+  }
+
+  function coverEntfernen() {
+    coverEntwurf = null;
+    coverEntfernt = true;
+    coverUrlSetzen(null);
+  }
+
   async function laden() {
     if (tastingId) {
       bestehend = await db.tastings.get(tastingId);
@@ -38,6 +79,14 @@
         datumBis = bestehend.datumBis ?? '';
         ort = bestehend.ort ?? '';
         verkoster = bestehend.verkoster;
+        const cover = (await fotosSortiert('cover', bestehend.id))[0];
+        if (cover) {
+          try {
+            coverUrlSetzen(await blobSicherLesen(cover.vorschau ?? cover.blob));
+          } catch (fehler) {
+            console.error('Cover nicht lesbar', fehler);
+          }
+        }
       }
     } else {
       verkoster = (await ladeEinstellungen()).verkoster;
@@ -68,6 +117,8 @@
       geaendertAm: jetzt,
     };
     await db.tastings.put(tasting);
+    if (coverEntwurf) await coverSetzen(tasting.id, coverEntwurf);
+    else if (coverEntfernt) await coverSetzen(tasting.id, null);
     onGespeichert(tasting.id);
   }
 
@@ -126,6 +177,26 @@
         {#if fehlerVerkoster}<span class="fehler">{de.allgemein.pflichtfeld}</span>{/if}
       </label>
 
+      <div class="feld">
+        <span>{de.fotos.cover}</span>
+        {#if coverUrl}
+          <img class="cover" src={coverUrl} alt="" />
+          <div class="coveraktionen">
+            <label class="textknopf">
+              {de.fotos.coverAendern}
+              <input type="file" accept="image/*" hidden disabled={coverBeschaeftigt} onchange={coverGewaehlt} />
+            </label>
+            <button type="button" class="textknopf" onclick={coverEntfernen}>{de.fotos.coverEntfernen}</button>
+          </div>
+        {:else}
+          <label class="coverleer">
+            <input type="file" accept="image/*" hidden disabled={coverBeschaeftigt} onchange={coverGewaehlt} />
+            {coverBeschaeftigt ? de.fotos.verarbeiten : `＋ ${de.fotos.coverWaehlen}`}
+          </label>
+        {/if}
+        {#if coverFehler}<span class="fehler">{coverFehler}</span>{/if}
+      </div>
+
       {#if bestehend}
         <p><button type="button" class="textknopf" onclick={loeschen}>{t.loeschenTitel}</button></p>
       {/if}
@@ -137,3 +208,42 @@
     </form>
   {/if}
 </div>
+
+<style>
+  .cover {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+  }
+  .coverleer {
+    display: grid;
+    place-items: center;
+    min-height: 96px;
+    border: 2px dashed var(--ink);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .coveraktionen {
+    display: flex;
+    justify-content: space-between;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 16px;
+  }
+  .coveraktionen .textknopf {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 16px;
+  }
+</style>

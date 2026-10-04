@@ -65,7 +65,10 @@ export interface Foto {
   art: FotoArt;
   bezugId: string;
   reihenfolge: 1 | 2 | 3;
+  /** komprimiertes JPEG, lange Kante max. 1600 px */
   blob: Blob;
+  /** kleine Vorschau (lange Kante 320 px) für Listen */
+  vorschau?: Blob;
   breite: number;
   hoehe: number;
   erstelltAm: string;

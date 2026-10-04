@@ -2,6 +2,7 @@
   import { liveQuery } from 'dexie';
   import Bewertung from '../components/Bewertung.svelte';
   import Dolde from '../components/Dolde.svelte';
+  import FotoBild from '../components/FotoBild.svelte';
   import { db } from '../lib/db';
   import { formatZeitraum } from '../lib/datum';
   import { gruppiere, navigationsIds } from '../lib/getraenke';
@@ -35,6 +36,7 @@
   // svelte-ignore state_referenced_locally
   let eingeklappt = $state(holeEingeklappt(tastingId));
   let reiter = $state<'getraenke' | 'auswertung'>('getraenke');
+  let hatCover = $state(false);
 
   $effect(() => {
     const abo = liveQuery(async () => ({
@@ -86,8 +88,11 @@
   </div>
 
   {#if tasting}
-    <div class="hero">
-      <span class="dolde"><Dolde hoehe={72} /></span>
+    <div class="hero" class:mitBild={hatCover}>
+      <span class="herobild">
+        <FotoBild art="cover" bezugId={tastingId} gross klasse="coverbild" bind:vorhanden={hatCover} />
+      </span>
+      {#if !hatCover}<span class="dolde"><Dolde hoehe={72} /></span>{/if}
       <div class="titelblock">
         <h1>{tasting.name}</h1>
         {#if tasting.untertitel}<p>{tasting.untertitel}</p>{/if}
@@ -153,7 +158,11 @@
           {#if offen}
             {#each gruppe.getraenke as g (g.id)}
               <button class="zeile" onclick={() => onBierOeffnen(tastingId, g.id, ids)}>
-                <span class="mini"><Dolde hoehe={26} /></span>
+                <span class="mini">
+                  <FotoBild art="getraenk" bezugId={g.id} klasse="minibild">
+                    {#snippet platzhalter()}<Dolde hoehe={26} />{/snippet}
+                  </FotoBild>
+                </span>
                 <span class="name">
                   <strong>{g.name}</strong>
                   <small>{detail(g) || (g.bewertung === undefined ? t.nichtBewertet : '')}</small>
@@ -187,6 +196,35 @@
     background: var(--ocker);
     color: #2b1d14;
     box-shadow: 0 3px 0 var(--ink);
+  }
+  .hero {
+    position: relative;
+    overflow: hidden;
+  }
+  .hero.mitBild {
+    min-height: 168px;
+    align-items: flex-end;
+    color: #fff6e0;
+  }
+  .herobild {
+    position: absolute;
+    inset: 0;
+  }
+  .herobild :global(.coverbild) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .hero.mitBild::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(transparent 30%, rgb(29 21 14 / 0.85));
+  }
+  .dolde,
+  .titelblock {
+    position: relative;
+    z-index: 1;
   }
   .dolde {
     flex: none;
@@ -295,6 +333,12 @@
     border: 2px solid var(--ink);
     background: var(--ocker);
     color: rgb(43 29 20 / 0.3);
+    overflow: hidden;
+  }
+  .mini :global(.minibild) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
   .tag {
     flex: none;

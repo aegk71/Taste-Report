@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import Bewertungsregler from '../components/Bewertungsregler.svelte';
+  import FotoStreifen from '../components/FotoStreifen.svelte';
   import { db, ladeEinstellungen } from '../lib/db';
   import { getraenkLoeschen, getraenkSpeichern, herstellerVorschlaege, letzterHersteller } from '../lib/getraenke';
+  import { fotosVonLoeschen } from '../lib/fotos';
   import type { Stil, Zustand } from '../lib/model';
   import { de } from '../lib/texte/de';
 
@@ -28,7 +30,10 @@
   let geladen = $state(false);
   // Die Maske wird je Getränk neu aufgebaut ({#key} in App.svelte), der Startwert genügt.
   // svelte-ignore state_referenced_locally
-  let id = $state<string | null>(getraenkId);
+  let id = $state<string>(getraenkId ?? crypto.randomUUID());
+  // svelte-ignore state_referenced_locally
+  // false, solange das Bier noch nicht in der Datenbank steht (Fotos können vorher schon aufgenommen werden)
+  let angelegt = $state(getraenkId !== null);
   let zustand = $state<Zustand>('probiert');
   let herstellerName = $state('');
   let standort = $state('');
@@ -66,7 +71,7 @@
           .slice(0, 5)
       : [],
   );
-  const position = $derived(id ? ids.indexOf(id) : -1);
+  const position = $derived(ids.indexOf(id));
   const vorheriges = $derived(position > 0 ? ids[position - 1] : undefined);
   const naechstes = $derived(position >= 0 && position < ids.length - 1 ? ids[position + 1] : undefined);
 
@@ -153,6 +158,7 @@
       try {
         status = 'speichert';
         id = await getraenkSpeichern(eingabe, id, aktuelleStile);
+        angelegt = true;
         if (!schmutzig) status = 'gespeichert';
       } catch (fehler) {
         console.error('Getränk speichern fehlgeschlagen', fehler);
@@ -164,10 +170,15 @@
   }
 
   async function verlassen(): Promise<boolean> {
-    if (schmutzig && !vollstaendig() && !confirm(t.unvollstaendig)) return false;
+    if (!vollstaendig()) {
+      const hatFotos = !angelegt && (await db.fotos.where('bezugId').equals(id).count()) > 0;
+      if ((schmutzig || hatFotos) && !confirm(t.unvollstaendigVerlassen)) return false;
+    }
     await speichernJetzt();
     await kette;
-    return status !== 'fehler';
+    if (status === 'fehler') return false;
+    if (!angelegt) await fotosVonLoeschen(id); // ohne Bier keine Fotos
+    return true;
   }
 
   async function zurueck() {
@@ -179,7 +190,7 @@
   }
 
   async function loeschen() {
-    if (!id || !confirm(t.loeschenFrage(name))) return;
+    if (!angelegt || !confirm(t.loeschenFrage(name))) return;
     schmutzig = false;
     clearTimeout(timer);
     await kette;
@@ -309,6 +320,11 @@
       </div>
 
       <div class="feld">
+        <span>{de.fotos.titel} · {de.fotos.titelHinweis}</span>
+        <FotoStreifen bezugId={id} />
+      </div>
+
+      <div class="feld">
         <div class="notizkopf">
           <label for="notiz">{t.notiz}</label>
           <button type="button" class="kopieren" onclick={notizKopieren} disabled={notiz.trim() === ''}>
@@ -347,7 +363,7 @@
       {:else if status === 'unvollstaendig'}{t.unvollstaendig}{/if}
     </p>
 
-    {#if id}
+    {#if angelegt}
       <p class="loeschen"><button type="button" class="textknopf" onclick={loeschen}>{t.loeschen}</button></p>
     {/if}
   {/if}
