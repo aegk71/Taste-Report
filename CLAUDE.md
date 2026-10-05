@@ -267,7 +267,7 @@ Backup je Tasting und gesamt, Import (ersetzen/Kopie), Persistenz-Hinweis, Backu
 Bewusst ausgeklammert: Berichtssprache Englisch und weitere Bewertungskategorien (private Nutzung).
 
 
-- Zusammenführen mehrerer Verkoster (vom Nutzer gewünscht, vorher im Detail abstimmen) (Gemeinschafts-Rangliste über Datei-Import)
+- Zusammenführen mehrerer Verkoster: jetzt Abschnitt 13 (Phasen 12–13)
 - Zweite Berichtsvariante im Zeitungsstil: jetzt Abschnitt 12 (Phasen 9–11)
 - Mehrgeräte-Sync
 
@@ -302,3 +302,38 @@ gesetzt im Etiketten-Look. Der Text entsteht in der App mit dem **eigenen API-Sc
 **Phase 11 – Magazin-Layout** „Magazin setzen“ in der Magazin-Karte erzeugt das PDF offline aus dem gespeicherten Text (`src/lib/export/pdfMagazin.ts`, gemeinsame Zeichenhilfen in `pdfWerkzeug.ts`, Spaltenaufteilung `magazinSatz.ts` mit Tests), Vorschau (`PdfVorschauAnsicht.svelte`, auch vom PDF-Bericht genutzt) und Teilen (`{Tasting}_Magazin_{Datum}.pdf`).
 Aufbau: Titelseite (Wortmarke + „MAGAZIN“, ungeschnittenes Cover-Bild, Schlagzeile mit Schatten, Vorspann, „Verkostungsbericht von …“, Zeitraum, Ort, Ø-Dolden); Text in zwei ausgeglichenen Spalten (Source Sans 10,2 pt) mit Zwischenüberschriften und Initiale am ersten Absatz, nach jedem Abschnitt ein Zitat (grüner Balken, „{Verkoster} über {Bier}“); „Im Bild“: Fotostrecke zu je drei Fotos ohne Zuschnitt (Biere mit Bildunterschrift, sonst die 6 bestbewerteten; höchstens 12), Unterschriften je Reihe auf gleicher Höhe, darunter Bier · Hersteller und Wert aus den Daten; „Bier des Festivals“, „Die Besten“ (Top 5), Schlusswort. Kopf mit Wortmarke, Fuß „Taste Report · {Verkoster}“ und „Seite x von y“, auf der letzten Seite stattdessen „Text mit KI-Unterstützung (Claude) aus den Notizen von {Verkoster}“. Verweise auf gelöschte Biere fallen weg.
 *Abnahme:* Magazin aus einem echten Text setzen, Vorschau blättern, teilen/speichern; Seiten ohne abgeschnittene Texte, Fotos ungeschnitten, Karten/Zitate nicht über Seitenränder.
+
+## 13. Gruppen-Vergleich (Erweiterung, Phasen 12–13)
+
+Optik-Soll: `schema/gruppe.html` (freigegeben; Artefakt: https://claude.ai/artifact/V2NvXAkTBN5dQNVLKTuHoX).
+Mehrere Verkoster vergleichen ihre Bewertungen zum selben Festival. Kein Server, kein Live-Abgleich (der kommt ggf. mit dem späteren Sync).
+
+### Entscheidungen
+
+- **Ziel:** Gruppen-Auswertung in der App, Gruppenbericht (PDF) und Excel mit je einer Spalte je Verkoster. Der Magazin-Bericht bleibt der Erlebnisbericht eines einzelnen Verkosters.
+- **Datenweg:** Jeder erfasst sein eigenes Tasting und schickt das ZIP-Backup (Teilen-Menü). Der Auswertende spielt die Backups mit dem vorhandenen Import als normale Tastings ein. Das Backup-Format bleibt unverändert.
+- **Struktur:** Ein „Gruppen-Vergleich“ (`Vergleich`, neuer Dexie-Store `vergleiche`) verknüpft zwei oder mehr Tastings. Die Einzeldaten werden nie verändert, Löschen des Vergleichs lässt alle Tastings unberührt. Der Vergleich liest immer die aktuellen Daten der Tastings. Fehlt ein Tasting, zeigt er die übrigen; bei weniger als zwei ein Hinweis.
+- **Anlegen:** Knopf „Gruppen-Vergleich“ in der Tasting-Liste; Tastings wählen (mind. 2), Namen vergeben. Verkoster-Name = `Tasting.verkoster`, bei Doppelungen schlägt die App einen Zusatz vor, der Anzeigename ist änderbar. Das erste gewählte Tasting liefert Fotos und Fazit.
+- **Zuordnung der Biere:** Schlüssel aus Hersteller + Biername (klein, ohne Akzente, Satzzeichen, Leerzeichen). Es zählen nur Getränke mit `zustand='probiert'`. Zwei Biere desselben Tastings werden nie automatisch vereinigt. Eine Liste „nicht zugeordnet“ erlaubt das manuelle Zusammenführen und Trennen; Handkorrekturen gehen vor der Automatik und werden im Vergleich gespeichert.
+- **Auswertung:** Alle Biere mit mindestens einer Bewertung kommen in die Rangliste, Wert = Durchschnitt der vorhandenen Bewertungen (2 Stellen), daneben „x von y“ (so viele Verkoster haben bewertet). Gleichstand und „Bier des Festivals“ wie in Abschnitt 5 (Sieger zusätzlich von Hand wählbar). Ansichten: Rangliste, Biere (je Hersteller, Werte je Verkoster), Verkoster, Einzelansicht je Bier mit Bewertung und Notiz je Verkoster.
+- **Bericht:** Notizen je Verkoster mit Namen; Fotos nur vom ersten Tasting, fehlt dort eins, das erste vorhandene der anderen. Excel: eine Zeile je Bier, Ø, Anzahl, je Verkoster eine Bewertungs- und eine Notizspalte.
+- **Backup:** „Alles sichern“ enthält die Vergleiche (`schemaVersion` bleibt 1, additives Feld); beim Import werden Tasting- und Bier-IDs umgeschrieben. Das Backup eines einzelnen Tastings enthält keine Vergleiche.
+
+```ts
+interface Vergleich {
+  id: string;
+  name: string;
+  tastingIds: string[];                  // erstes = „mein“ Tasting
+  anzeigenamen: Record<string, string>;  // tastingId → Name
+  zuordnung: Record<string, string>;     // Handkorrekturen: getraenkId → Getraenk.id eines Ankers (= auf sich selbst: einzeln)
+  siegerSchluessel?: string;             // Bier-Schlüssel (normalisiert „hersteller|name“ bzw. „e:“ + Getraenk.id)
+  erstelltAm: string; geaendertAm: string;
+}
+```
+
+### Phasen
+
+**Phase 12 – Vergleich in der App** Store `vergleiche` (Dexie-Schema-Version 2), anlegen/umbenennen/löschen (`VergleichForm`), Zuordnung mit Handkorrektur (`VergleichZuordnung`; Handkorrekturen verweisen auf ein Anker-Bier, „Lösen“ in `VergleichBierDetail`), Gruppen-Auswertung (`VergleichAnsicht`: Rangliste, Biere, Verkoster; reine Logik in `src/lib/vergleich.ts` mit Tests `tests/vergleich.test.ts`, Daten in `vergleichDaten.ts`), Backup „Alles“ mit Vergleichen (`vergleichPruefen`/`vergleichUmschreiben` in `backupFormat.ts`). Beim Import: kollidierende Vergleiche je nach Modus ersetzt oder als Kopie, Verweise folgen den kopierten Tastings und Bieren. Ein Tasting löschen ändert den Vergleich nicht, er blendet es aus.
+*Abnahme:* Zwei bis drei Backups einspielen, Vergleich anlegen, Rangliste/Durchschnitte nachrechnen, ein Bier von Hand zuordnen und trennen, Alles sichern, löschen, wiederherstellen: Vergleich ist da.
+**Phase 13 – Bericht und Excel** Gruppenbericht als PDF (Vorschau, Teilen) und Excel mit Spalten je Verkoster.
+*Abnahme:* PDF und Excel mit echten Daten prüfen: Werte je Verkoster, Ø, „x von y“, Fotos ungeschnitten, Karten nicht über Seitenumbrüche.

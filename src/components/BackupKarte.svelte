@@ -77,6 +77,7 @@
   </div>
 {:else if (phase === 'bereit' || phase === 'gesichert') && ergebnis}
   <p class="hinweis">{t.fertig(ergebnis.tastings, ergebnis.biere, ergebnis.fotos, mb)}</p>
+  {#if ergebnis.vergleiche > 0}<p class="hinweis">{t.vergleiche(ergebnis.vergleiche)}</p>{/if}
   {#if ergebnis.fotosFehlen > 0}<p class="fehler">{t.fotosFehlen(ergebnis.fotosFehlen)}</p>{/if}
   {#if phase === 'gesichert'}
     <p class="ok">{t.gesichert}</p>

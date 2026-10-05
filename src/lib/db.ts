@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import { kennzahlen as kennzahlenVon } from './auswertung';
-import type { Einstellungen, Foto, Getraenk, Hersteller, Tasting } from './model';
+import type { Einstellungen, Foto, Getraenk, Hersteller, Tasting, Vergleich } from './model';
 import { STANDARD_STILE } from './model';
 
 export class AppDatabase extends Dexie {
@@ -9,6 +9,7 @@ export class AppDatabase extends Dexie {
   hersteller!: Table<Hersteller, string>;
   getraenke!: Table<Getraenk, string>;
   fotos!: Table<Foto, string>;
+  vergleiche!: Table<Vergleich, string>;
 
   constructor() {
     super('taste-report');
@@ -19,6 +20,8 @@ export class AppDatabase extends Dexie {
       getraenke: 'id, tastingId, herstellerId, zustand',
       fotos: 'id, bezugId, [art+bezugId]',
     });
+    // Phase 12: Gruppen-Vergleiche (neuer Store, die übrigen bleiben unverändert)
+    this.version(2).stores({ vergleiche: 'id, geaendertAm' });
   }
 }
 

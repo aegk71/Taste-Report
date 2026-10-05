@@ -15,6 +15,7 @@
   let dateiFeld: HTMLInputElement | undefined = $state();
 
   const kollisionen = $derived(vorschau ? vorschau.tastings.filter((x) => x.kollision).length : 0);
+  const vergleichKollisionen = $derived(vorschau ? vorschau.vergleichKollisionen : 0);
 
   function fehlerFuer(fehler: unknown): string {
     if (fehler instanceof BackupFehler) {
@@ -85,9 +86,11 @@
               <li>{x.name}{x.kollision ? ' ⚠' : ''}</li>
             {/each}
           </ul>
+          {#if vorschau.vergleiche > 0}<p class="hinweis">{t.vergleicheInhalt(vorschau.vergleiche)}</p>{/if}
         </div>
-        {#if kollisionen > 0}
-          <p><b>{t.kollision(kollisionen)}</b></p>
+        {#if kollisionen > 0 || vergleichKollisionen > 0}
+          {#if kollisionen > 0}<p><b>{t.kollision(kollisionen)}</b></p>{/if}
+          {#if vergleichKollisionen > 0}<p><b>{t.kollisionVergleiche(vergleichKollisionen)}</b></p>{/if}
           <div class="wahl" role="radiogroup">
             <button class="wahlknopf" role="radio" aria-checked={modus === 'kopie'} class:an={modus === 'kopie'} onclick={() => (modus = 'kopie')}>{t.kopie}</button>
             <button class="wahlknopf" role="radio" aria-checked={modus === 'ersetzen'} class:an={modus === 'ersetzen'} onclick={() => (modus = 'ersetzen')}>{t.ersetzen}</button>
@@ -98,6 +101,7 @@
         <button class="knopf sekundaer block" onclick={schliessen}>{t.abbrechen}</button>
       {:else if phase === 'fertig' && ergebnis}
         <p class="ok">{t.fertig(ergebnis.tastings, ergebnis.biere, ergebnis.fotos)}</p>
+        {#if ergebnis.vergleiche > 0}<p class="hinweis">{t.vergleiche(ergebnis.vergleiche)}</p>{/if}
         {#if ergebnis.neueStile > 0}<p class="hinweis">{t.neueStile(ergebnis.neueStile)}</p>{/if}
         {#if ergebnis.fotosFehlen > 0}<p class="fehler">{de.backup.fotosFehlen(ergebnis.fotosFehlen)}</p>{/if}
         <button class="knopf block" onclick={schliessen}>{t.schliessen}</button>

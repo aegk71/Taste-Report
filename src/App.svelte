@@ -6,6 +6,8 @@
   import TastingForm from './views/TastingForm.svelte';
   import Tastingliste from './views/Tastingliste.svelte';
   import TastingUebersicht from './views/TastingUebersicht.svelte';
+  import VergleichAnsicht from './views/VergleichAnsicht.svelte';
+  import VergleichForm from './views/VergleichForm.svelte';
 
   type Ruecksprung = { name: 'liste' } | { name: 'tastingUebersicht'; tastingId: string };
 
@@ -14,7 +16,9 @@
     | { name: 'tastingForm'; tastingId: string | null; ruecksprung: Ruecksprung }
     | { name: 'tastingUebersicht'; tastingId: string }
     | { name: 'getraenkForm'; tastingId: string; getraenkId: string | null; ids: string[] }
-    | { name: 'einstellungen' };
+    | { name: 'einstellungen' }
+    | { name: 'vergleichForm'; vergleichId: string | null }
+    | { name: 'vergleich'; vergleichId: string };
 
   let ansicht = $state<Ansicht>({ name: 'liste' });
 
@@ -29,6 +33,8 @@
     onNeu={() => (ansicht = { name: 'tastingForm', tastingId: null, ruecksprung: { name: 'liste' } })}
     onOeffnen={(tastingId) => (ansicht = { name: 'tastingUebersicht', tastingId })}
     onEinstellungen={() => (ansicht = { name: 'einstellungen' })}
+    onVergleichNeu={() => (ansicht = { name: 'vergleichForm', vergleichId: null })}
+    onVergleichOeffnen={(vergleichId) => (ansicht = { name: 'vergleich', vergleichId })}
   />
 {:else if ansicht.name === 'tastingForm'}
   {@const ruecksprung = ansicht.ruecksprung}
@@ -62,4 +68,18 @@
   {/key}
 {:else if ansicht.name === 'einstellungen'}
   <Einstellungen onZurueck={() => (ansicht = { name: 'liste' })} />
+{:else if ansicht.name === 'vergleichForm'}
+  {@const bisher = ansicht.vergleichId}
+  <VergleichForm
+    vergleichId={bisher}
+    onGespeichert={(vergleichId) => (ansicht = { name: 'vergleich', vergleichId })}
+    onGeloescht={() => (ansicht = { name: 'liste' })}
+    onAbbrechen={() => (ansicht = bisher ? { name: 'vergleich', vergleichId: bisher } : { name: 'liste' })}
+  />
+{:else if ansicht.name === 'vergleich'}
+  <VergleichAnsicht
+    vergleichId={ansicht.vergleichId}
+    onZurueck={() => (ansicht = { name: 'liste' })}
+    onBearbeiten={(vergleichId) => (ansicht = { name: 'vergleichForm', vergleichId })}
+  />
 {/if}

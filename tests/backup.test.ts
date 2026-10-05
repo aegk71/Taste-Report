@@ -7,9 +7,11 @@ import {
   hinweisNoetig,
   reihenfolgeNeu,
   stileAbgleichen,
+  vergleichPruefen,
+  vergleichUmschreiben,
   type BackupTasting,
 } from '../src/lib/backupFormat.ts';
-import type { Getraenk, Stil } from '../src/lib/model.ts';
+import type { Getraenk, Stil, Vergleich } from '../src/lib/model.ts';
 
 const eintrag = (): BackupTasting => ({
   tasting: { id: 't1', name: 'Fest', datumVon: '2026-09-12', verkoster: 'Alex', siegerId: 'g2', erstelltAm: 'a', geaendertAm: 'b', hinweisAm: '2026-09-12' },
@@ -134,4 +136,34 @@ test('Backup-Hinweis: Fazit ohne Sicherung, höchstens einmal pro Tag', () => {
   assert.equal(hinweisNoetig({ ...t, hinweisAm: '2026-10-02' }, [], [], '2026-10-03'), true);
   assert.equal(hinweisNoetig({ ...t, geaendertAm: '2026-09-30T00:00:00.000Z' }, [], [], '2026-10-03'), false, 'Fazit schon gesichert');
   assert.equal(hinweisNoetig({ ...t, fazit: '  ' }, [], [], '2026-10-03'), false, 'leeres Fazit');
+});
+
+const vergleich = (): Vergleich => ({
+  id: 'v1', name: 'Gruppe', tastingIds: ['t1', 't2'], anzeigenamen: { t1: 'Alex', t2: 'Sven' },
+  zuordnung: { g1: 'g1', x9: 'g1' }, siegerSchluessel: 'e:g1', erstelltAm: 'a', geaendertAm: 'b',
+});
+
+test('Vergleiche: fehlen im Einzel-Backup, werden aus dem Backup „Alles“ gelesen, Ungültiges fällt weg', () => {
+  assert.deepEqual(backupPruefen(datei()).vergleiche, []);
+  const d = backupPruefen({ ...datei(), art: 'alle', vergleiche: [vergleich(), { id: 'kaputt' }, null, { id: 'v2', name: 'Leer', tastingIds: [] }] });
+  assert.equal(d.vergleiche.length, 1);
+  assert.equal(d.vergleiche[0].name, 'Gruppe');
+  assert.deepEqual(vergleichPruefen({ id: 'v', name: 'N', tastingIds: ['t', 5, ''], anzeigenamen: { t: 'A', u: 3 }, zuordnung: 'x' })!.anzeigenamen, { t: 'A' });
+  assert.equal(vergleichPruefen({ id: 'v', name: 'N', tastingIds: ['t'] })!.erstelltAm.length > 0, true);
+});
+
+test('Vergleiche: Verweise werden auf kopierte Tastings und Biere umgestellt, der Vergleich selbst als Kopie', () => {
+  const tastings = new Map([['t1', 'neuT1']]);
+  const biere = new Map([['g1', 'neuG1']]);
+  const v = vergleichUmschreiben(vergleich(), tastings, biere);
+  assert.deepEqual(v.tastingIds, ['neuT1', 't2']);
+  assert.deepEqual(v.anzeigenamen, { neuT1: 'Alex', t2: 'Sven' });
+  assert.deepEqual(v.zuordnung, { neuG1: 'neuG1', x9: 'neuG1' });
+  assert.equal(v.siegerSchluessel, 'e:neuG1');
+  assert.equal(v.id, 'v1');
+  const k = vergleichUmschreiben(vergleich(), tastings, biere, { neueId: () => 'neuV', suffix: ' (Kopie)' });
+  assert.equal(k.id, 'neuV');
+  assert.equal(k.name, 'Gruppe (Kopie)');
+  assert.equal(vergleichUmschreiben({ ...vergleich(), siegerSchluessel: 'alpenbrau|weizen' }, tastings, biere).siegerSchluessel, 'alpenbrau|weizen');
+  assert.equal(vergleich().tastingIds[0], 't1', 'Original bleibt unverändert');
 });

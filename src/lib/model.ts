@@ -98,6 +98,28 @@ export interface Foto {
   erstelltAm: string;
 }
 
+/**
+ * Gruppen-Vergleich (Phase 12): verknüpft zwei oder mehr Tastings verschiedener Verkoster. Die Einzeldaten bleiben unverändert,
+ * der Vergleich liest immer die aktuellen Daten der Tastings.
+ */
+export interface Vergleich {
+  id: string;
+  name: string;
+  /** Reihenfolge wie gewählt; das erste Tasting liefert Fotos und Fazit */
+  tastingIds: string[];
+  /** Tasting-ID → Anzeigename des Verkosters */
+  anzeigenamen: Record<string, string>;
+  /**
+   * Handkorrekturen der Zuordnung: Getraenk.id → Getraenk.id eines Ankers, zu dem das Bier gehört;
+   * verweist es auf sich selbst, bleibt es ein einzelnes Bier. Alles andere ordnet die Automatik zu.
+   */
+  zuordnung: Record<string, string>;
+  /** Von Hand gewähltes „Bier des Festivals“ (Bier-Schlüssel); sonst automatisch das beste */
+  siegerSchluessel?: string;
+  erstelltAm: string;
+  geaendertAm: string;
+}
+
 export const STANDARD_STILE: readonly string[] = [
   'Pils',
   'Helles',

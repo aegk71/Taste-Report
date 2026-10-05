@@ -8,12 +8,21 @@
   import { formatZeitpunkt, formatZeitraum } from '../lib/datum';
   import type { Tasting } from '../lib/model';
   import { de } from '../lib/texte/de';
+  import { ladeVergleichsListe, type VergleichsKurz } from '../lib/vergleichDaten';
 
   let {
     onNeu,
     onOeffnen,
     onEinstellungen,
-  }: { onNeu: () => void; onOeffnen: (tastingId: string) => void; onEinstellungen: () => void } = $props();
+    onVergleichNeu,
+    onVergleichOeffnen,
+  }: {
+    onNeu: () => void;
+    onOeffnen: (tastingId: string) => void;
+    onEinstellungen: () => void;
+    onVergleichNeu: () => void;
+    onVergleichOeffnen: (vergleichId: string) => void;
+  } = $props();
 
   const t = de.liste;
 
@@ -23,6 +32,7 @@
   }
 
   let eintraege = $state<Eintrag[] | null>(null);
+  let vergleiche = $state<VergleichsKurz[]>([]);
   let startHinweis = $state(false);
 
   // Einstellungen anlegen (beim allerersten Start inkl. Antrag auf dauerhaften Speicher) und Start-Hinweis prüfen
@@ -45,6 +55,14 @@
     });
     return () => abo.unsubscribe();
   });
+
+  $effect(() => {
+    const abo = liveQuery(() => ladeVergleichsListe()).subscribe({
+      next: (werte) => (vergleiche = werte),
+      error: (fehler) => console.error('Vergleiche laden fehlgeschlagen', fehler),
+    });
+    return () => abo.unsubscribe();
+  });
 </script>
 
 <div class="seite">
@@ -60,6 +78,23 @@
       <p>{de.backup.startText}</p>
       <button class="knopf sekundaer" onclick={startHinweisSchliessen}>{de.backup.startOk}</button>
     </div>
+  {/if}
+
+  {#if vergleiche.length > 0}
+    <h2 class="abschnitt">{de.vergleich.abschnitt}</h2>
+    <ul>
+      {#each vergleiche as { vergleich, verkoster, biere, durchschnitt } (vergleich.id)}
+        <li>
+          <button class="karte tasting vergleich" onclick={() => onVergleichOeffnen(vergleich.id)}>
+            <span class="text">
+              <strong>{vergleich.name}</strong>
+              <span class="meta">{de.vergleich.karteInfo(verkoster, biere)}</span>
+              {#if durchschnitt !== undefined}<Bewertung wert={durchschnitt} />{/if}
+            </span>
+          </button>
+        </li>
+      {/each}
+    </ul>
   {/if}
 
   <h2 class="abschnitt">{t.titel}</h2>
@@ -103,6 +138,9 @@
         </li>
       {/each}
     </ul>
+    {#if eintraege.length >= 2}
+      <button class="knopf sekundaer block vergleichsknopf" onclick={onVergleichNeu}>{de.vergleich.knopf}</button>
+    {/if}
   {/if}
 </div>
 
@@ -121,6 +159,12 @@
   .starthinweis p {
     font-size: 15px;
     line-height: 1.35;
+  }
+  .vergleich {
+    background: var(--hop-soft);
+  }
+  .vergleichsknopf {
+    margin-top: 18px;
   }
   .titel {
     text-align: right;

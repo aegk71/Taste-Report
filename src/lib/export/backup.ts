@@ -6,12 +6,13 @@ import {
   reihenfolgeNeu,
   SCHEMA_VERSION,
   stileAbgleichen,
+  vergleichUmschreiben,
   type BackupDatei,
   type BackupTasting,
 } from '../backupFormat';
 import { db, ladeEinstellungen, tastingHartLoeschen } from '../db';
 import { blobSicherLesen, vorschauAusBlob } from '../foto';
-import type { Foto } from '../model';
+import type { Foto, Vergleich } from '../model';
 import { de } from '../texte/de';
 
 export const ZIP_MIME = 'application/zip';
@@ -24,6 +25,8 @@ export interface BackupErgebnis {
   tastings: number;
   biere: number;
   fotos: number;
+  /** Gruppen-Vergleiche (nur beim Backup „Alles“) */
+  vergleiche: number;
   /** Fotos, die sich nicht lesen ließen (iOS-Blob-Fehler) und deshalb fehlen */
   fotosFehlen: number;
 }
@@ -73,6 +76,7 @@ export async function backupErstellen(umfang: BackupUmfang, onFortschritt?: (fer
       });
   }
 
+  const vergleiche = umfang === 'alle' ? await db.vergleiche.toArray() : [];
   const einstellungen = await ladeEinstellungen();
   const alleStile = einstellungen.stile;
   const genutzt = new Set(eintraege.flatMap((e) => e.getraenke.map((g) => g.stilId).filter((id): id is string => !!id)));
@@ -84,11 +88,12 @@ export async function backupErstellen(umfang: BackupUmfang, onFortschritt?: (fer
     einstellungen: umfang === 'alle' ? { verkoster: einstellungen.verkoster } : undefined,
     stile: umfang === 'alle' ? alleStile : alleStile.filter((s) => genutzt.has(s.id)),
     tastings: eintraege,
+    vergleiche,
   };
   zip.file('backup.json', JSON.stringify(inhalt, null, 2));
 
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-  return { blob, zeitpunkt, tastings: tastings.length, biere, fotos: gesichert.size, fotosFehlen };
+  return { blob, zeitpunkt, tastings: tastings.length, biere, fotos: gesichert.size, vergleiche: vergleiche.length, fotosFehlen };
 }
 
 /** Nach erfolgreichem Teilen/Speichern: Zeitpunkt der Sicherung vermerken (ohne geaendertAm zu ändern). */
@@ -110,6 +115,9 @@ export interface ImportVorschau {
   tastings: { id: string; name: string; biere: number; kollision: boolean }[];
   biere: number;
   fotos: number;
+  vergleiche: number;
+  /** Vergleiche, deren ID schon auf diesem Gerät vorhanden ist */
+  vergleichKollisionen: number;
 }
 
 export type ImportModus = 'ersetzen' | 'kopie';
@@ -118,6 +126,7 @@ export interface ImportErgebnis {
   tastings: number;
   biere: number;
   fotos: number;
+  vergleiche: number;
   fotosFehlen: number;
   neueStile: number;
 }
@@ -140,12 +149,15 @@ export async function backupVorabPruefen(datei: Blob): Promise<ImportVorschau> {
   }
   const inhalt = backupPruefen(roh);
   const vorhanden = new Set(await db.tastings.toCollection().primaryKeys());
+  const vergleichVorhanden = new Set(await db.vergleiche.toCollection().primaryKeys());
   return {
     zip,
     inhalt,
     tastings: inhalt.tastings.map((e) => ({ id: e.tasting.id, name: e.tasting.name, biere: e.getraenke.length, kollision: vorhanden.has(e.tasting.id) })),
     biere: inhalt.tastings.reduce((n, e) => n + e.getraenke.length, 0),
     fotos: inhalt.tastings.reduce((n, e) => n + e.fotos.length, 0),
+    vergleiche: inhalt.vergleiche.length,
+    vergleichKollisionen: inhalt.vergleiche.filter((v) => vergleichVorhanden.has(v.id)).length,
   };
 }
 
@@ -162,10 +174,17 @@ export async function backupImportieren(vorschau: ImportVorschau, modus: ImportM
   // quelle = Eintrag im ZIP (dort heißen die Bilddateien nach der ursprünglichen Foto-ID), eintrag = was gespeichert wird
   const eintraege: { eintrag: BackupTasting; quelle: BackupTasting }[] = [];
   const ersetzen: string[] = [];
+  // alte → neue IDs der als Kopie angelegten Tastings und Biere (für die Verweise der Vergleiche)
+  const tastingIds = new Map<string, string>();
+  const getraenkIds = new Map<string, string>();
   for (const e of inhalt.tastings) {
     const kollision = vorhanden.has(e.tasting.id);
-    if (kollision && modus === 'kopie') eintraege.push({ eintrag: alsKopie(e, () => crypto.randomUUID(), de.backup.kopieSuffix), quelle: e });
-    else {
+    if (kollision && modus === 'kopie') {
+      const kopie = alsKopie(e, () => crypto.randomUUID(), de.backup.kopieSuffix);
+      eintraege.push({ eintrag: kopie, quelle: e });
+      tastingIds.set(e.tasting.id, kopie.tasting.id);
+      e.getraenke.forEach((g, i) => getraenkIds.set(g.id, kopie.getraenke[i].id));
+    } else {
       eintraege.push({ eintrag: e, quelle: e });
       if (kollision) ersetzen.push(e.tasting.id);
     }
@@ -187,14 +206,20 @@ export async function backupImportieren(vorschau: ImportVorschau, modus: ImportM
   }
   const fotosNeuNummeriert = reihenfolgeNeu(fotos);
 
+  const vergleichVorhanden = new Set(await db.vergleiche.toCollection().primaryKeys());
+  const vergleiche: Vergleich[] = inhalt.vergleiche.map((v) =>
+    vergleichUmschreiben(v, tastingIds, getraenkIds, modus === 'kopie' && vergleichVorhanden.has(v.id) ? { neueId: () => crypto.randomUUID(), suffix: de.backup.kopieSuffix } : undefined),
+  );
+
   const stileUmrechnen = (stilId: string | undefined) => (stilId ? abgleich.idMap.get(stilId) : undefined);
 
-  await db.transaction('rw', db.einstellungen, db.tastings, db.hersteller, db.getraenke, db.fotos, async () => {
+  await db.transaction('rw', [db.einstellungen, db.tastings, db.hersteller, db.getraenke, db.fotos, db.vergleiche], async () => {
     for (const id of ersetzen) await tastingHartLoeschen(id);
     await db.tastings.bulkPut(eintraege.map(({ eintrag: e }) => ({ ...e.tasting, letzteSicherung: inhalt.erstelltAm })));
     await db.hersteller.bulkPut(eintraege.flatMap(({ eintrag: e }) => e.hersteller));
     await db.getraenke.bulkPut(eintraege.flatMap(({ eintrag: e }) => e.getraenke.map((g) => ({ ...g, stilId: stileUmrechnen(g.stilId) }))));
     await db.fotos.bulkPut(fotosNeuNummeriert);
+    await db.vergleiche.bulkPut(vergleiche);
     const aktuell = (await db.einstellungen.get('global')) ?? einstellungen;
     const verkoster = aktuell.verkoster.trim() === '' && inhalt.einstellungen?.verkoster ? inhalt.einstellungen.verkoster : aktuell.verkoster;
     await db.einstellungen.put({ ...aktuell, stile: abgleich.stile, verkoster });
@@ -204,6 +229,7 @@ export async function backupImportieren(vorschau: ImportVorschau, modus: ImportM
     tastings: eintraege.length,
     biere: eintraege.reduce((n, { eintrag: e }) => n + e.getraenke.length, 0),
     fotos: fotosNeuNummeriert.length,
+    vergleiche: vergleiche.length,
     fotosFehlen,
     neueStile: abgleich.neu,
   };

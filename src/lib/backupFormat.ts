@@ -1,6 +1,6 @@
 // Backup-Format und reine Hilfen (ohne Datenbank, testbar mit Node): Prüfung, Kopie mit neuen IDs,
 // Stil-Abgleich und die Regel für den Backup-Hinweis. Texte kommen von außen (Fehlercodes).
-import type { Artikel, Foto, Getraenk, Hersteller, Stil, Tasting } from './model';
+import type { Artikel, Foto, Getraenk, Hersteller, Stil, Tasting, Vergleich } from './model';
 
 export const SCHEMA_VERSION = 1;
 
@@ -24,6 +24,8 @@ export interface BackupDatei {
   /** alle Stile (Alles sichern) bzw. die von den Bieren genutzten Stile */
   stile: Stil[];
   tastings: BackupTasting[];
+  /** Gruppen-Vergleiche (nur bei „Alles sichern“, additives Feld) */
+  vergleiche: Vergleich[];
 }
 
 export type BackupFehlerCode = 'format' | 'version' | 'leer';
@@ -74,7 +76,57 @@ export function backupPruefen(roh: unknown): BackupDatei {
     einstellungen: istObjekt(roh.einstellungen) && typeof roh.einstellungen.verkoster === 'string' ? { verkoster: roh.einstellungen.verkoster } : undefined,
     stile: Array.isArray(roh.stile) ? (roh.stile as Stil[]).filter((s) => istObjekt(s) && istText(s.id) && istText(s.name)) : [],
     tastings: roh.tastings as BackupTasting[],
+    vergleiche: Array.isArray(roh.vergleiche) ? roh.vergleiche.map(vergleichPruefen).filter((v): v is Vergleich => v !== null) : [],
   };
+}
+
+const textMap = (x: unknown): Record<string, string> =>
+  istObjekt(x) ? Object.fromEntries(Object.entries(x).filter((e): e is [string, string] => typeof e[1] === 'string')) : {};
+
+/** Ein Vergleich aus dem Backup; ungültige Einträge werden verworfen (der Rest des Backups bleibt nutzbar). */
+export function vergleichPruefen(roh: unknown): Vergleich | null {
+  if (!istObjekt(roh) || !istText(roh.id) || !istText(roh.name) || !Array.isArray(roh.tastingIds)) return null;
+  const tastingIds = roh.tastingIds.filter(istText);
+  if (tastingIds.length === 0) return null;
+  const jetzt = new Date().toISOString();
+  return {
+    id: roh.id,
+    name: roh.name,
+    tastingIds,
+    anzeigenamen: textMap(roh.anzeigenamen),
+    zuordnung: textMap(roh.zuordnung),
+    siegerSchluessel: typeof roh.siegerSchluessel === 'string' && roh.siegerSchluessel !== '' ? roh.siegerSchluessel : undefined,
+    erstelltAm: typeof roh.erstelltAm === 'string' ? roh.erstelltAm : jetzt,
+    geaendertAm: typeof roh.geaendertAm === 'string' ? roh.geaendertAm : jetzt,
+  };
+}
+
+/**
+ * Verweise eines Vergleichs auf die neuen IDs umstellen (Tastings und Biere, die beim Import als Kopie angelegt wurden;
+ * alles andere bleibt). Mit `neueId` wird der Vergleich selbst zur Kopie.
+ */
+export function vergleichUmschreiben(
+  v: Vergleich,
+  tastingIds: Map<string, string>,
+  getraenkIds: Map<string, string>,
+  kopie?: { neueId: () => string; suffix: string },
+): Vergleich {
+  const t = (id: string) => tastingIds.get(id) ?? id;
+  const g = (id: string) => getraenkIds.get(id) ?? id;
+  return {
+    ...v,
+    id: kopie ? kopie.neueId() : v.id,
+    name: kopie ? `${v.name}${kopie.suffix}` : v.name,
+    tastingIds: v.tastingIds.map(t),
+    anzeigenamen: Object.fromEntries(Object.entries(v.anzeigenamen).map(([id, name]) => [t(id), name])),
+    zuordnung: Object.fromEntries(Object.entries(v.zuordnung).map(([id, anker]) => [g(id), g(anker)])),
+    siegerSchluessel: v.siegerSchluessel === undefined ? undefined : umschreibenSchluessel(v.siegerSchluessel, g),
+  };
+}
+
+/** Einzelbier-Schlüssel ("e:" + Getraenk.id) folgen der neuen ID; Namensschlüssel bleiben. */
+function umschreibenSchluessel(schluessel: string, g: (id: string) => string): string {
+  return schluessel.startsWith('e:') ? `e:${g(schluessel.slice(2))}` : schluessel;
 }
 
 /** Fotos je Bezug lückenlos nummerieren (1, 2, 3), falls ein Bild beim Sichern nicht lesbar war. */
