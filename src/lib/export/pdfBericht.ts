@@ -40,8 +40,10 @@ const INHALT_OBEN = 27;
 const INHALT_UNTEN = 278;
 const PT = 0.3528; // 1 pt in mm
 
-const FOTO = 40; // Hauptfoto auf der Karte
-const EXTRA = 19; // weitere Fotos
+const FOTO = 40; // Breite des Hauptfotos auf der Karte
+const FOTO_MAX_H = 56; // höchstens so hoch (Hochformat)
+const EXTRA = 19; // Breite der weiteren Fotos
+const EXTRA_MAX_H = 26;
 const PAD = 4;
 const KARTE_ABSTAND = 4;
 const HERSTELLER_KOPF = 13;
@@ -93,20 +95,26 @@ export async function berichtErstellen(
     doc.rect(0, 0, SEITE_B, SEITE_H, 'F');
   };
 
-  /** Bild füllend (object-fit: cover) in ein Rechteck mit Rundung setzen. */
-  const bildEinpassen = (bild: PdfBild, x: number, y: number, b: number, h: number, radius: number) => {
-    const skala = Math.max(b / bild.breite, h / bild.hoehe);
-    const bw = bild.breite * skala;
-    const bh = bild.hoehe * skala;
+  /** Größe, mit der ein Bild ohne Zuschnitt in einen Rahmen passt (Hoch- und Querformat bleiben erhalten). */
+  const passend = (bild: PdfBild, maxB: number, maxH: number) => {
+    const skala = Math.min(maxB / bild.breite, maxH / bild.hoehe);
+    return { b: bild.breite * skala, h: bild.hoehe * skala };
+  };
+
+  /** Ganzes Bild (object-fit: contain) im Rahmen maxB x maxH: mittig (mittig = true) oder oben links, mit Rundung und Rand. */
+  const bildEinpassen = (bild: PdfBild, x: number, y: number, maxB: number, maxH: number, radius: number, mittig = false) => {
+    const { b, h } = passend(bild, maxB, maxH);
+    const bx = mittig ? x + (maxB - b) / 2 : x;
+    const by = mittig ? y + (maxH - h) / 2 : y;
     doc.saveGraphicsState();
-    doc.roundedRect(x, y, b, h, radius, radius, null);
+    doc.roundedRect(bx, by, b, h, radius, radius, null);
     doc.clip();
     doc.discardPath();
-    doc.addImage(bild.dataUrl, 'JPEG', x + (b - bw) / 2, y + (h - bh) / 2, bw, bh);
+    doc.addImage(bild.dataUrl, 'JPEG', bx, by, b, h);
     doc.restoreGraphicsState();
     farbeLinie(FARBE.ink);
     doc.setLineWidth(0.5);
-    doc.roundedRect(x, y, b, h, radius, radius, 'S');
+    doc.roundedRect(bx, by, b, h, radius, radius, 'S');
   };
 
   const platzhalter = (x: number, y: number, b: number, h: number, radius: number) => {
@@ -146,7 +154,8 @@ export async function berichtErstellen(
     const bx = 50;
     const by = 62;
     const bs = 110;
-    if (bild) bildEinpassen(bild, bx, by, bs, bs, 5);
+    // Cover-Bild ungeschnitten: Hochformat bis 110 mm hoch, Querformat bis 130 mm breit
+    if (bild) bildEinpassen(bild, (SEITE_B - 130) / 2, by, 130, bs, 5, true);
     else {
       farbeFuellen(FARBE.papier);
       farbeLinie(FARBE.ink);
@@ -256,7 +265,7 @@ export async function berichtErstellen(
     doc.setLineWidth(0.7);
     doc.roundedRect(RAND, y, INNEN, sh, 3, 3, 'FD');
     const foto = optionen.fotos ? await titelbild(g.id, 600) : undefined;
-    if (foto) bildEinpassen(foto, RAND + 5, y + 5, 24, 24, 2);
+    if (foto) bildEinpassen(foto, RAND + 5, y + 5, 24, 24, 2, true);
     else platzhalter(RAND + 5, y + 5, 24, 24, 2);
     const tx = RAND + 34;
     schrift(SCHRIFT_TEXT, 'bold', 8);
@@ -358,7 +367,9 @@ export async function berichtErstellen(
     const meta = metaZeile(g);
     const hatZeile2 = Boolean(g.stilName || meta);
     const kopfH = nameZeilen.length * 5.4 + (hatZeile2 ? 7 : 0);
-    const linkeH = optionen.fotos ? FOTO + (bilder.length > 1 ? 2 + EXTRA : 0) : 0;
+    const hauptH = bilder[0] ? passend(bilder[0], FOTO, FOTO_MAX_H).h : FOTO;
+    const extraH = Math.max(0, ...bilder.slice(1, 3).map((b) => passend(b, EXTRA, EXTRA_MAX_H).h));
+    const linkeH = optionen.fotos ? hauptH + (bilder.length > 1 ? 2 + extraH : 0) : 0;
     const maxInnen = INHALT_UNTEN - INHALT_OBEN - HERSTELLER_KOPF - 2 * PAD - 2;
     schrift(SCHRIFT_TEXT, 'normal', 9.8);
     let notizZeilen = g.notiz ? zeilen(g.notiz, textB) : [];
@@ -379,9 +390,10 @@ export async function berichtErstellen(
     if (optionen.fotos) {
       const fx = RAND + PAD;
       const fy = top + PAD;
-      if (k.bilder[0]) bildEinpassen(k.bilder[0], fx, fy, FOTO, FOTO, 2);
+      const hauptH = k.bilder[0] ? passend(k.bilder[0], FOTO, FOTO_MAX_H).h : FOTO;
+      if (k.bilder[0]) bildEinpassen(k.bilder[0], fx, fy, FOTO, FOTO_MAX_H, 2);
       else platzhalter(fx, fy, FOTO, FOTO, 2);
-      k.bilder.slice(1, 3).forEach((bild, i) => bildEinpassen(bild, fx + i * (EXTRA + 2), fy + FOTO + 2, EXTRA, EXTRA, 1.5));
+      k.bilder.slice(1, 3).forEach((bild, i) => bildEinpassen(bild, fx + i * (EXTRA + 2), fy + hauptH + 2, EXTRA, EXTRA_MAX_H, 1.5));
     }
 
     let ty = top + PAD + 3.8;

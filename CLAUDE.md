@@ -1,6 +1,6 @@
 # CLAUDE.md – Taste Report (BrauKru)
 
-Spezifikation zur Freigabe (Phase 2). Nach Freigabe wird diese Datei im neuen Repo als `CLAUDE.md` abgelegt.
+Projektspezifikation und Arbeitsregeln. Phasen 1–8 sind umgesetzt und abgenommen; Erweiterungen siehe Abschnitt 11.
 Optik-Soll: `schema/schema.html` (freigegeben, auch als Artefakt: https://claude.ai/artifact/Xf6DsCJ4PmBT1YeNnaqXnd).
 
 ## 1. Zweck
@@ -44,7 +44,6 @@ gleich aussieht. Sonst keine weiteren Laufzeit-Abhängigkeiten ohne Rückfrage.
 - **Platzhalter** ohne Foto: blasse Dolde auf Ocker (Getränk, Tasting, Bericht).
 - **Icon:** Variante **C** (Ocker-Dolde auf Dunkelbraun) ist gewählt und erzeugt (`npm run icons`). Größen: Apple-Touch 180,
   PWA 192/512, Maskable 512 (Dolde in der inneren 80 %-Zone), Favicon. In kleinen Größen die Blattzwischenräume leicht verbreitern.
-  `public/icon-c.html` leitet nur noch in die App um (das beim Vergleich angelegte Homescreen-Symbol zeigt darauf).
 - Bewertung in Listen: **eine Dolde + Zahl** (nicht bewertet: graue Dolde + „–“). Im Regler: fünf Dolden mit Viertelfüllung.
   Zahlenformat: ganze/halbe Werte mit einer Nachkommastelle (`4,5`, `3,0`), Viertel mit zwei (`4,25`).
 
@@ -182,7 +181,7 @@ Dateinamen: `{Tastingname}_{Typ}_{JJJJ-MM-TT}.pdf|.xlsx|.zip` (Sonderzeichen ber
   Dolden + Zahl, % Vol./Menge/Preis, Notiz, weitere Fotos klein. Karten nicht über Seitenumbrüche teilen.
 - Vorgemerkte Getränke erscheinen nicht im Bericht. Fußzeile „Taste Report · Seite x von y“.
 - Schriften als TTF einbetten (Alfa Slab One, Source Sans 3; `public/fonts/*.ttf`, erzeugt mit `tools/schriften.py`). Dolden und Wortmarke als Vektorpfad zeichnen. Zeichen außerhalb der Schriften (Emoji u. ä.) werden entfernt, Akzentbuchstaben auf den Grundbuchstaben zurückgeführt.
-- Fotos im Bericht quadratisch zugeschnitten (object-fit: cover) und für das PDF auf ca. 900 px verkleinert.
+- Fotos im Bericht **ungeschnitten** (Hoch- und Querformat bleiben erhalten): Hauptfoto 40 mm breit, höchstens 56 mm hoch, weitere Fotos 19 mm breit, höchstens 26 mm hoch; Cover-Bild bis 130 × 110 mm; Platzhalter-Dolde quadratisch. Für das PDF auf ca. 900 px verkleinert.
 - Vorschau in der App mit **pdfjs auf Canvas/Bilder** (nicht per `<iframe>`, iOS-PWA zeigt sonst nur Seite 1).
 
 ### Excel (ExcelJS, schlank)
@@ -262,7 +261,9 @@ Backup je Tasting und gesamt, Import (ersetzen/Kopie), Persistenz-Hinweis, Backu
 
 ## 11. Später (nicht ohne Auftrag)
 
+Bewusst ausgeklammert: Berichtssprache Englisch und weitere Bewertungskategorien (private Nutzung).
+
+
 - Zusammenführen mehrerer Verkoster (Gemeinschafts-Rangliste über Datei-Import)
 - Zweite Berichtsvariante im Zeitungsstil (weniger analytisch: Schlagzeile, Spalten, Notizen als Text/Zitate, Bilder mit Unterschrift)
-- Berichtssprache Englisch, weitere Bewertungskategorien (Aussehen, Geruch, Geschmack, Abgang)
 - Mehrgeräte-Sync
