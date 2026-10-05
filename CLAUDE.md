@@ -57,6 +57,9 @@ interface Einstellungen {
   verkoster: string;                 // Standard, Vorgabe für neue Tastings
   stile: Stil[];                     // global für alle Tastings
   letzteGesamtsicherung?: string;
+  startHinweisGesehen?: boolean;
+  kiSchluessel?: string;              // eigener Anthropic-Schlüssel, nur lokal, nie im Backup
+  kiGeprueftAm?: string;
 }
 interface Stil { id: string; name: string; aktiv: boolean; sortierung: number }
 // Standardstile: Pils, Helles, Weizen, Kölsch, Altbier, Märzen, Dunkel, Bock, IPA, Pale Ale, Stout, Porter,
@@ -264,6 +267,35 @@ Backup je Tasting und gesamt, Import (ersetzen/Kopie), Persistenz-Hinweis, Backu
 Bewusst ausgeklammert: Berichtssprache Englisch und weitere Bewertungskategorien (private Nutzung).
 
 
-- Zusammenführen mehrerer Verkoster (Gemeinschafts-Rangliste über Datei-Import)
-- Zweite Berichtsvariante im Zeitungsstil (weniger analytisch: Schlagzeile, Spalten, Notizen als Text/Zitate, Bilder mit Unterschrift)
+- Zusammenführen mehrerer Verkoster (vom Nutzer gewünscht, vorher im Detail abstimmen) (Gemeinschafts-Rangliste über Datei-Import)
+- Zweite Berichtsvariante im Zeitungsstil: jetzt Abschnitt 12 (Phasen 9–11)
 - Mehrgeräte-Sync
+
+## 12. Magazin-Bericht (Erweiterung, Phasen 9–11)
+
+Optik-Soll: `schema/magazin.html` (freigegeben, auch als Artefakt: https://claude.ai/artifact/RMeXfH8TyhEQEwL8Vih2ji).
+Zweite Berichtsvariante im Zeitungs-/Magazinstil: ein Artikel über das Festival, den Claude (Anthropic) aus Notizen und Fotos schreibt,
+gesetzt im Etiketten-Look. Der Text entsteht in der App mit dem **eigenen API-Schlüssel** des Nutzers (Direktaufruf der API, kein Server).
+
+### Entscheidungen
+
+- **Textquelle:** nur direkter API-Aufruf (Weg B). Kein Prompt-Kopieren, keine Ersatzvariante ohne KI. Ohne Schlüssel oder Internet nur der Hinweis „Schlüssel einrichten“.
+- **Schlüssel:** in `Einstellungen.kiSchluessel` (IndexedDB, nur auf dem Gerät), **nie** im Backup, nie im Code. Format `sk-ant-…`, Anzeige maskiert (`sk-ant-…a7Q2`).
+  `kiGeprueftAm` = letzte erfolgreiche Verbindungsprüfung. Anleitung für Nutzer steht in den Einstellungen („KI-Bericht“): Konto auf platform.claude.com
+  (getrennt vom Claude-Abo), Guthaben und Monatslimit unter Billing, Schlüssel unter API keys, einfügen, testen.
+- **Aufruf:** `POST https://api.anthropic.com/v1/messages` mit `x-api-key`, `anthropic-version: 2023-06-01`, `anthropic-dangerous-direct-browser-access: true`
+  (`src/lib/ki/anthropic.ts`). Modell als Konstante `KI_MODELL = 'claude-sonnet-5-5'`. Zeitlimit 20 s für den Test.
+- **Fehler:** `src/lib/ki/kiFehler.ts` übersetzt Status/Antwort in Codes (`schluessel`, `guthaben`, `limit`, `ueberlastet`, `netz`, `modell`, `format`, `unbekannt`) mit deutschen Meldungen in `de.ki.fehler`.
+  Beim Speichern bleibt der Schlüssel erhalten, solange er nicht abgelehnt (401/403) wird (z. B. leeres Guthaben lässt sich später beheben).
+- **Ton/Länge:** Auswahl im Dialog: locker-humorvoll (Vorgabe), sachlich-genussvoll, Magazin-Feuilleton; Länge kurz/normal. Immer Ich-Form als Erlebnisbericht des Verkosters.
+- **Gesendet wird:** Tastingdaten, Biere mit Kurz-IDs (B1…Bn), Notizen, Rangliste, Fazit, Ton/Länge; Fotos = Cover und Titelbild jedes bewerteten Biers, auf 512 px verkleinert, höchstens 30 (Schalter „Fotos an die KI senden“, Vorgabe an). Vor dem Senden zeigt die App, was an Anthropic geht.
+- **Keine erfundenen Fakten:** Die KI nennt keine Zahlen frei. Bewertungen, Platzierungen, Bier- und Herstellernamen setzt die App aus den Daten ein. Antwort als festes JSON (`schlagzeile`, `vorspann`, `abschnitte[]`, `zitate[]` mit Bier-ID, `bildunterschriften{ID}`, `schlusswort`), die App prüft es und verwirft unbekannte Bier-IDs.
+- **Speichern:** Text im Tasting (`Tasting.artikel`, `artikelErstelltAm`), im Export-Dialog bearbeitbar, im Backup enthalten (`schemaVersion` bleibt 1, additives Feld). Das Magazin lässt sich offline und ohne weitere Kosten neu setzen.
+- **Layout (PDF):** A4 hoch, immer helles Papier, Etiketten-Look; 3–5 Seiten: Titel (ungeschnittenes Titelfoto, Schlagzeile, Vorspann), Fließtext zweispaltig mit Initiale, Zwischenüberschriften und Zitaten aus den Notizen, Herstellerabsätze, Fotostrecke mit Bildunterschriften (Fotos ungeschnitten), „Bier des Festivals“, „Die Besten“, Schlusswort. Fußzeile mit Kennzeichnung „Text mit KI-Unterstützung (Claude)“.
+
+### Phasen
+
+**Phase 9 – KI-Zugang** Einstellungen „KI-Bericht“ mit Anleitung, Schlüssel speichern/entfernen, Verbindung testen, Fehlermeldungen.
+*Abnahme:* Schlüssel eintragen, „Verbindung getestet“ erscheint (echte Prüfung auf dem iPhone), Schlüssel nach Neustart noch da, im Backup nicht enthalten.
+**Phase 10 – Text erzeugen** Export-Karte mit Ton, Länge, Fotos; Anfrage, Antwortprüfung, Text bearbeiten und im Tasting speichern, Backup-Format ergänzen.
+**Phase 11 – Magazin-Layout** PDF-Seiten, Vorschau, Teilen; Prüfung mit Hoch-/Quer-/Quadratfotos und sehr langem Text.

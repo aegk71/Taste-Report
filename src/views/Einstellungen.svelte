@@ -2,6 +2,7 @@
   import { liveQuery } from 'dexie';
   import BackupImport from '../components/BackupImport.svelte';
   import BackupKarte from '../components/BackupKarte.svelte';
+  import KiEinstellungen from '../components/KiEinstellungen.svelte';
   import { formatZeitpunkt } from '../lib/datum';
   import { db, ladeEinstellungen } from '../lib/db';
   import type { Einstellungen, Stil } from '../lib/model';
@@ -116,6 +117,9 @@
       <BackupKarte umfang="alle" name={de.app.name} />
       <BackupImport />
     </div>
+
+    <h2 class="abschnitt">{de.ki.titel}</h2>
+    <KiEinstellungen />
 
     <h2 class="abschnitt">{t.stile}</h2>
     <ul class="stile">

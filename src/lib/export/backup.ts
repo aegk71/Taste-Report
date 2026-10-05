@@ -32,7 +32,7 @@ export async function backupErstellen(umfang: BackupUmfang, onFortschritt?: (fer
   // Der Zeitpunkt gilt ab Beginn: alles, was während des Sicherns geändert wird, bleibt "ungesichert".
   const zeitpunkt = new Date().toISOString();
   const tastings = umfang === 'alle' ? await db.tastings.toArray() : [await db.tastings.get(umfang.tastingId)].filter((t) => !!t);
-  if (tastings.length === 0) throw new Error('Tasting nicht gefunden');
+  if (tastings.length === 0) throw new BackupFehler('leer');
 
   const { default: JSZip } = await import('jszip');
   const zip = new JSZip();

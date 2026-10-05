@@ -15,6 +15,10 @@ export interface Einstellungen {
   letzteGesamtsicherung?: string;
   /** Hinweis "Daten liegen nur auf diesem Gerät" wurde weggetippt */
   startHinweisGesehen?: boolean;
+  /** Eigener Anthropic-API-Schlüssel für den Magazin-Bericht. Nur auf diesem Gerät, nie im Backup. */
+  kiSchluessel?: string;
+  /** Zeitpunkt der letzten erfolgreichen Verbindungsprüfung */
+  kiGeprueftAm?: string;
 }
 
 export interface Tasting {

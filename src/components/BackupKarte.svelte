@@ -2,6 +2,7 @@
   import { heuteIso } from '../lib/datum';
   import { exportDateiname } from '../lib/export/dateiname';
   import { dateiBereitstellen } from '../lib/export/teilen';
+  import { BackupFehler } from '../lib/backupFormat';
   import type { BackupErgebnis, BackupUmfang } from '../lib/export/backup';
   import { de } from '../lib/texte/de';
 
@@ -23,6 +24,7 @@
   let phase = $state<Phase>('leer');
   let fortschritt = $state({ fertig: 0, gesamt: 0 });
   let ergebnis = $state.raw<BackupErgebnis | null>(null);
+  let leer = $state(false);
 
   $effect(() => {
     gesperrt = phase === 'arbeitet';
@@ -30,13 +32,15 @@
 
   async function erstellen() {
     phase = 'arbeitet';
+    leer = false;
     fortschritt = { fertig: 0, gesamt: 0 };
     try {
       const { backupErstellen } = await import('../lib/export/backup');
       ergebnis = await backupErstellen(umfang, (fertig, gesamt) => (fortschritt = { fertig, gesamt }));
       phase = 'bereit';
     } catch (fehler) {
-      console.error('Backup erstellen fehlgeschlagen', fehler);
+      leer = fehler instanceof BackupFehler && fehler.code === 'leer';
+      if (!leer) console.error('Backup erstellen fehlgeschlagen', fehler);
       phase = 'fehler';
     }
   }
@@ -81,7 +85,7 @@
   {/if}
   <button class="knopf block" class:sekundaer={phase === 'gesichert'} onclick={teilen}>{phase === 'gesichert' ? t.nochmal : t.teilen}</button>
 {:else}
-  {#if phase === 'fehler'}<p class="fehler">{t.fehler}</p>{/if}
+  {#if phase === 'fehler'}<p class="fehler">{leer ? t.leer : t.fehler}</p>{/if}
   <button class="knopf sekundaer block" onclick={erstellen}>{phase === 'fehler' ? de.export.nochmal : t.erstellen}</button>
 {/if}
 
