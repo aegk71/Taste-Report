@@ -2,6 +2,7 @@
   import { liveQuery } from 'dexie';
   import Bewertung from '../components/Bewertung.svelte';
   import Dolde from '../components/Dolde.svelte';
+  import VergleichExport from '../components/VergleichExport.svelte';
   import VergleichBierDetail from '../components/VergleichBierDetail.svelte';
   import VergleichFoto from '../components/VergleichFoto.svelte';
   import VergleichZuordnung from '../components/VergleichZuordnung.svelte';
@@ -33,6 +34,7 @@
   let detail = $state<string | null>(null);
   let zuordnen = $state(false);
   let waehlen = $state(false);
+  let exportOffen = $state(false);
 
   // raw: reine Lesedaten aus IndexedDB, kein Proxy nötig
   let daten = $state.raw<VergleichsDaten | null | undefined>(undefined);
@@ -87,6 +89,7 @@
     <div class="kopf">
       <button class="ib" onclick={onZurueck} aria-label={de.allgemein.zurueck}>‹</button>
       <h1>{daten?.vergleich.name ?? '…'}</h1>
+      {#if daten && anzahl >= 2}<button class="ib" onclick={() => (exportOffen = true)} aria-label={de.gruppeExport.knopf}>⇪</button>{/if}
       {#if daten}<button class="ib" onclick={() => onBearbeiten(vergleichId)} aria-label={t.bearbeiten}>✎</button>{/if}
     </div>
 
@@ -200,6 +203,10 @@
       {/if}
     {/if}
   </div>
+
+  {#if exportOffen && daten}
+    <VergleichExport {vergleichId} name={daten.vergleich.name} onSchliessen={() => (exportOffen = false)} />
+  {/if}
 
   {#if waehlen && daten}
     <div class="blatt" role="dialog" aria-modal="true" aria-label={t.siegerWaehlen}>

@@ -8,6 +8,7 @@ import { gruppiere } from '../getraenke';
 import type { Getraenk, Hersteller, Tasting } from '../model';
 import { de } from '../texte/de';
 import { bildFuerPdf, type PdfBild } from './pdfBild';
+import { coverSeiteZeichnen } from './pdfCover';
 import { SCHRIFT_TEXT, SCHRIFT_TITEL, schriftenRegistrieren } from './pdfSchriften';
 import { bereinigeText, metaZeile } from './pdfText';
 import { INHALT_OBEN, INHALT_UNTEN, INNEN, PT, pdfWerkzeug, RAND, SEITE_B, SEITE_H } from './pdfWerkzeug';
@@ -73,75 +74,20 @@ export async function berichtErstellen(
   const platzierungen = rangliste(getraenke);
   const herstellerName = new Map(hersteller.map((h) => [h.id, h.name]));
 
-  const { farbeFuellen, farbeLinie, farbeText, schrift, text, zeilen, hintergrund, passend, bildEinpassen, platzhalter, wertRechts } = pdfWerkzeug(doc);
+  const werkzeug = pdfWerkzeug(doc);
+  const { farbeFuellen, farbeLinie, farbeText, schrift, text, zeilen, hintergrund, passend, bildEinpassen, platzhalter, wertRechts } = werkzeug;
 
   // ---------- Seite 1: Cover ----------
   const coverFoto = (await fotosSortiert('cover', tasting.id))[0];
   const cover = coverFoto ? await bildFuerPdf(coverFoto.blob, 1100) : undefined;
-  coverSeite(doc, tasting, zahlen.durchschnitt, cover);
-
-  function coverSeite(d: jsPDF, t: Tasting, durchschnitt: number | undefined, bild: PdfBild | undefined) {
-    hintergrund(FARBE.ocker);
-    farbeLinie(FARBE.ink);
-    d.setLineWidth(1.4);
-    d.roundedRect(12, 12, SEITE_B - 24, SEITE_H - 24, 7, 7, 'S');
-
-    const wb = 64;
-    wortmarkeZeichnen(d, (SEITE_B - wb) / 2, 24, wb, FARBE.ink);
-
-    const bx = 50;
-    const by = 62;
-    const bs = 110;
-    // Cover-Bild ungeschnitten: Hochformat bis 110 mm hoch, Querformat bis 130 mm breit
-    if (bild) bildEinpassen(bild, (SEITE_B - 130) / 2, by, 130, bs, 5, true);
-    else {
-      farbeFuellen(FARBE.papier);
-      farbeLinie(FARBE.ink);
-      d.setLineWidth(0.5);
-      d.roundedRect(bx, by, bs, bs, 5, 5, 'FD');
-      const dh = 72;
-      doldeZeichnen(d, bx + (bs - (dh * 58.9) / 83.7) / 2, by + (bs - dh) / 2, dh, 1, [236, 200, 120]);
-    }
-
-    let pt = 30;
-    schrift(SCHRIFT_TITEL, 'normal', pt);
-    let titel = zeilen(t.name, 164);
-    while (titel.length > 3 && pt > 20) {
-      pt -= 2;
-      schrift(SCHRIFT_TITEL, 'normal', pt);
-      titel = zeilen(t.name, 164);
-    }
-    const lh = pt * PT * 1.12;
-    let y = by + bs + 17;
-    for (const zeile of titel) {
-      farbeText(FARBE.ink);
-      text(zeile, SEITE_B / 2 + 0.6, y + 0.6, 'center');
-      farbeText(FARBE.rot);
-      text(zeile, SEITE_B / 2, y, 'center');
-      y += lh;
-    }
-    farbeText(FARBE.ink);
-    if (t.untertitel) {
-      schrift(SCHRIFT_TEXT, 'bold', 14);
-      for (const zeile of zeilen(t.untertitel, 160)) {
-        text(zeile, SEITE_B / 2, y + 1, 'center');
-        y += 6.2;
-      }
-    }
-    schrift(SCHRIFT_TEXT, 'bold', 12.5);
-    text([formatZeitraum(t.datumVon, t.datumBis), t.ort].filter(Boolean).join(' · '), SEITE_B / 2, y + 2.5, 'center');
-
-    farbeLinie(FARBE.ink);
-    d.setLineWidth(0.8);
-    d.line(26, 255, SEITE_B - 26, 255);
-    schrift(SCHRIFT_TEXT, 'bold', 12);
-    text(`${de.pdf.berichtVon} ${t.verkoster}`, SEITE_B / 2, 263, 'center');
-    if (durchschnitt !== undefined) {
-      const dH = 7.5;
-      const gesamt = doldenReiheBreite(dH);
-      doldenReihe(d, (SEITE_B - gesamt) / 2, 267, dH, durchschnitt, FARBE.hop, [236, 200, 120]);
-    }
-  }
+  coverSeiteZeichnen(doc, werkzeug, {
+    titel: tasting.name,
+    untertitel: tasting.untertitel,
+    zeile: [formatZeitraum(tasting.datumVon, tasting.datumBis), tasting.ort].filter(Boolean).join(' · '),
+    byline: `${de.pdf.berichtVon} ${tasting.verkoster}`,
+    durchschnitt: zahlen.durchschnitt,
+    bild: cover,
+  });
 
   // ---------- Inhaltsseiten ----------
   let y = INHALT_OBEN;
