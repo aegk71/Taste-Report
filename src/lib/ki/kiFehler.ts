@@ -1,6 +1,6 @@
 // Fehlerbehandlung für den KI-Zugang. Reine Funktionen ohne Laufzeit-Importe (testbar mit Node).
 
-export type KiFehlerCode = 'format' | 'schluessel' | 'guthaben' | 'limit' | 'ueberlastet' | 'netz' | 'modell' | 'unbekannt';
+export type KiFehlerCode = 'format' | 'schluessel' | 'guthaben' | 'limit' | 'ueberlastet' | 'netz' | 'modell' | 'antwort' | 'unbekannt';
 
 export class KiFehler extends Error {
   code: KiFehlerCode;

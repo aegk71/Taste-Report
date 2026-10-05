@@ -1,6 +1,6 @@
 // Backup-Format und reine Hilfen (ohne Datenbank, testbar mit Node): Prüfung, Kopie mit neuen IDs,
 // Stil-Abgleich und die Regel für den Backup-Hinweis. Texte kommen von außen (Fehlercodes).
-import type { Foto, Getraenk, Hersteller, Stil, Tasting } from './model';
+import type { Artikel, Foto, Getraenk, Hersteller, Stil, Tasting } from './model';
 
 export const SCHEMA_VERSION = 1;
 
@@ -86,6 +86,19 @@ export function reihenfolgeNeu<T extends { bezugId: string; reihenfolge: 1 | 2 |
   );
 }
 
+/** Bier-IDs in Zitaten und Bildunterschriften des Magazin-Texts auf die neuen IDs umstellen. */
+function artikelUmschreiben(artikel: Artikel, ids: Map<string, string>): Artikel {
+  return {
+    ...artikel,
+    zitate: artikel.zitate.filter((z) => ids.has(z.bier)).map((z) => ({ ...z, bier: ids.get(z.bier)! })),
+    bildunterschriften: Object.fromEntries(
+      Object.entries(artikel.bildunterschriften)
+        .filter(([id]) => ids.has(id))
+        .map(([id, text]) => [ids.get(id)!, text]),
+    ),
+  };
+}
+
 /** Tasting mit lauter neuen IDs („als Kopie“). Alle Verweise werden mit umgeschrieben. */
 export function alsKopie(eintrag: BackupTasting, neueId: () => string, kopieSuffix: string): BackupTasting {
   const tastingId = neueId();
@@ -97,6 +110,7 @@ export function alsKopie(eintrag: BackupTasting, neueId: () => string, kopieSuff
       id: tastingId,
       name: `${eintrag.tasting.name}${kopieSuffix}`,
       siegerId: eintrag.tasting.siegerId ? getraenkIds.get(eintrag.tasting.siegerId) : undefined,
+      artikel: eintrag.tasting.artikel ? artikelUmschreiben(eintrag.tasting.artikel, getraenkIds) : undefined,
       hinweisAm: undefined,
     },
     hersteller: eintrag.hersteller.map((h) => ({ ...h, id: herstellerIds.get(h.id)!, tastingId })),

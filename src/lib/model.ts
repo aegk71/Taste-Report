@@ -21,6 +21,21 @@ export interface Einstellungen {
   kiGeprueftAm?: string;
 }
 
+export type KiTon = 'locker' | 'sachlich' | 'feuilleton';
+export type KiLaenge = 'kurz' | 'normal';
+
+/** Von der KI geschriebener und von Hand bearbeitbarer Magazin-Text (Zitate/Bildunterschriften verweisen auf Getraenk.id). */
+export interface Artikel {
+  schlagzeile: string;
+  vorspann: string;
+  abschnitte: { ueberschrift: string; text: string }[];
+  zitate: { bier: string; text: string }[];
+  bildunterschriften: Record<string, string>;
+  schlusswort: string;
+  ton: KiTon;
+  laenge: KiLaenge;
+}
+
 export interface Tasting {
   id: string;
   name: string;
@@ -31,6 +46,9 @@ export interface Tasting {
   verkoster: string;
   fazit?: string;
   siegerId?: string;
+  /** Magazin-Text (Phase 10), im Backup enthalten */
+  artikel?: Artikel;
+  artikelErstelltAm?: string;
   letzteSicherung?: string;
   hinweisAm?: string;
   erstelltAm: string;

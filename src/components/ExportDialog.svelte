@@ -4,6 +4,7 @@
   import { exportDateiname } from '../lib/export/dateiname';
   import { dateiBereitstellen } from '../lib/export/teilen';
   import BackupKarte from './BackupKarte.svelte';
+  import MagazinKarte from './MagazinKarte.svelte';
   import type { BerichtErgebnis } from '../lib/export/pdfBericht';
   import type { Tasting } from '../lib/model';
   import { de } from '../lib/texte/de';
@@ -23,7 +24,8 @@
   let abgebrochen = false;
   let excelStatus = $state<'leer' | 'arbeitet' | 'fehler'>('leer');
   let backupArbeitet = $state(false);
-  const beschaeftigt = $derived(phase === 'arbeitet' || excelStatus === 'arbeitet' || backupArbeitet);
+  let magazinArbeitet = $state(false);
+  const beschaeftigt = $derived(phase === 'arbeitet' || excelStatus === 'arbeitet' || backupArbeitet || magazinArbeitet);
 
   onDestroy(() => (abgebrochen = true));
 
@@ -127,6 +129,9 @@
         <button class="knopf sekundaer block" onclick={excelTeilen} disabled={beschaeftigt}>
           {excelStatus === 'arbeitet' ? t.excelArbeitet : excelStatus === 'fehler' ? t.nochmal : t.excelErstellen}
         </button>
+
+        <hr />
+        <MagazinKarte {tasting} bind:gesperrt={magazinArbeitet} />
 
         <hr />
         {/if}
