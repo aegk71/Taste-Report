@@ -1,6 +1,6 @@
 # CLAUDE.md – Taste Report (BrauKru)
 
-Projektspezifikation und Arbeitsregeln. Phasen 1–8 sind umgesetzt und abgenommen; Erweiterungen siehe Abschnitt 11.
+Projektspezifikation und Arbeitsregeln. Phasen 1–13 sind umgesetzt und abgenommen (Grundfunktionen, Magazin-Bericht Abschnitt 12, Gruppen-Vergleich Abschnitt 13); Zurückgestelltes siehe Abschnitt 11.
 Optik-Soll: `schema/schema.html` (freigegeben, auch als Artefakt: https://claude.ai/artifact/Xf6DsCJ4PmBT1YeNnaqXnd).
 
 ## 1. Zweck
@@ -269,7 +269,8 @@ Bewusst ausgeklammert: Berichtssprache Englisch und weitere Bewertungskategorien
 
 - Zusammenführen mehrerer Verkoster: jetzt Abschnitt 13 (Phasen 12–13)
 - Zweite Berichtsvariante im Zeitungsstil: jetzt Abschnitt 12 (Phasen 9–11)
-- Mehrgeräte-Sync
+- Mehrgeräte-Sync: zurückgestellt (Entscheidung des Nutzers nach Abnahme von Phase 13, erst die vorhandenen Funktionen umfänglich testen). Optionen bei Wiederaufnahme: Dateiabgleich (Änderungsdatei, Zusammenführen über `geaendertAm`), direkter Austausch per QR-Code, Cloud-Dienst (bricht „alle Daten lokal“), vorher im Detail abstimmen.
+- Magazin-Prompt nachschärfen: zurückgestellt bis nach dem ersten realen Tasting
 
 ## 12. Magazin-Bericht (Erweiterung, Phasen 9–11)
 
