@@ -1,12 +1,15 @@
 <script lang="ts">
   import { liveQuery } from 'dexie';
-  import { formatZeitpunkt } from '../lib/datum';
+  import { formatZeitpunkt, heuteIso } from '../lib/datum';
+  import { exportDateiname } from '../lib/export/dateiname';
+  import type { BerichtErgebnis } from '../lib/export/pdfBericht';
   import { db } from '../lib/db';
   import type { SendeUebersicht } from '../lib/ki/erzeugen';
   import { KiFehler, type KiFehlerCode } from '../lib/ki/kiFehler';
   import type { KiLaenge, KiTon, Tasting } from '../lib/model';
   import { de } from '../lib/texte/de';
   import MagazinEditor from './MagazinEditor.svelte';
+  import PdfVorschauAnsicht from './PdfVorschauAnsicht.svelte';
 
   let {
     tasting,
@@ -38,9 +41,12 @@
   let fehlerDetail = $state('');
   let editorOffen = $state(false);
   let neuBestaetigen = $state(false);
+  let setzenPhase = $state<'ruhig' | 'arbeitet' | 'fertig' | 'fehler'>('ruhig');
+  let setzenFortschritt = $state({ fertig: 0, gesamt: 0 });
+  let magazin = $state.raw<BerichtErgebnis | null>(null);
 
   $effect(() => {
-    gesperrt = arbeitet;
+    gesperrt = arbeitet || setzenPhase === 'arbeitet';
   });
 
   $effect(() => {
@@ -80,6 +86,25 @@
     arbeitet = false;
   }
 
+  async function setzen() {
+    setzenPhase = 'arbeitet';
+    setzenFortschritt = { fertig: 0, gesamt: 0 };
+    try {
+      // jsPDF ist groß und wird erst hier geladen
+      const { magazinErstellen } = await import('../lib/export/pdfMagazin');
+      magazin = await magazinErstellen(tasting.id, (fertig, gesamt) => (setzenFortschritt = { fertig, gesamt }));
+      setzenPhase = 'fertig';
+    } catch (f) {
+      console.error('Magazin setzen fehlgeschlagen', f);
+      setzenPhase = 'fehler';
+    }
+  }
+
+  function vorschauSchliessen() {
+    magazin = null;
+    setzenPhase = 'ruhig';
+  }
+
   function neuErzeugen() {
     if (!confirm(t.neuFrage)) return;
     neuBestaetigen = true;
@@ -93,6 +118,12 @@
 
 {#if !schluessel}
   <p class="hinweis">{t.keinSchluessel}</p>
+{:else if setzenPhase === 'arbeitet'}
+  <div class="karte arbeit" aria-live="polite">
+    <b>{t.setzt}</b>
+    {#if setzenFortschritt.gesamt > 0}<span class="hinweis">{t.setztFotos(setzenFortschritt.fertig, setzenFortschritt.gesamt)}</span>{/if}
+    <span class="balken"><i></i></span>
+  </div>
 {:else if arbeitet}
   <div class="karte arbeit" aria-live="polite">
     <b>{t.schreibt}</b>
@@ -105,7 +136,9 @@
       <b>{t.vorhanden(tasting.artikelErstelltAm ? formatZeitpunkt(tasting.artikelErstelltAm) : '')}</b>
       <span class="hinweis">{tasting.artikel.schlagzeile}</span>
     </div>
-    <button class="knopf block" onclick={() => (editorOffen = true)}>{t.bearbeiten}</button>
+    {#if setzenPhase === 'fehler'}<p class="fehler" role="alert">{t.setzenFehler}</p>{/if}
+    <button class="knopf block" onclick={setzen}>{setzenPhase === 'fehler' ? de.export.nochmal : t.setzen}</button>
+    <button class="knopf sekundaer block" onclick={() => (editorOffen = true)}>{t.bearbeiten}</button>
     <button class="knopf sekundaer block" onclick={neuErzeugen}>{t.neuErzeugen}</button>
   {:else}
     {#if uebersicht && uebersicht.biere === 0}
@@ -146,6 +179,16 @@
       {/if}
     {/if}
   {/if}
+{/if}
+
+{#if setzenPhase === 'fertig' && magazin}
+  <PdfVorschauAnsicht
+    blob={magazin.blob}
+    seiten={magazin.seiten}
+    dateiname={exportDateiname(tasting.name, 'Magazin', heuteIso(), 'pdf')}
+    titel={t.vorschau}
+    onSchliessen={vorschauSchliessen}
+  />
 {/if}
 
 {#if editorOffen}

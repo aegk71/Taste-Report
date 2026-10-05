@@ -25,7 +25,8 @@ export function bereinigeText(text: string): string {
     const basis = zeichen.normalize('NFD')[0];
     if (basis && istErlaubt(basis.codePointAt(0)!)) ergebnis += basis;
   }
-  return ergebnis;
+  // Entfernte Zeichen (z. B. Emoji) hinterlassen sonst doppelte Leerzeichen
+  return ergebnis.replace(/[ 	]{2,}/g, ' ');
 }
 
 const komma = (zahl: number, stellen?: number) =>

@@ -5,6 +5,7 @@
   import { dateiBereitstellen } from '../lib/export/teilen';
   import BackupKarte from './BackupKarte.svelte';
   import MagazinKarte from './MagazinKarte.svelte';
+  import PdfVorschauAnsicht from './PdfVorschauAnsicht.svelte';
   import type { BerichtErgebnis } from '../lib/export/pdfBericht';
   import type { Tasting } from '../lib/model';
   import { de } from '../lib/texte/de';
@@ -19,8 +20,6 @@
   let nurBewertete = $state(true);
   let fortschritt = $state({ fertig: 0, gesamt: 0 });
   let ergebnis = $state<BerichtErgebnis | null>(null);
-  let seitenBilder = $state<string[]>([]);
-  let vorschauFertig = $state(false);
   let abgebrochen = false;
   let excelStatus = $state<'leer' | 'arbeitet' | 'fehler'>('leer');
   let backupArbeitet = $state(false);
@@ -31,8 +30,6 @@
 
   async function erstellen() {
     phase = 'arbeitet';
-    seitenBilder = [];
-    vorschauFertig = false;
     fortschritt = { fertig: 0, gesamt: 0 };
     try {
       // jsPDF und pdfjs sind groß und werden erst hier geladen
@@ -41,11 +38,6 @@
       if (abgebrochen) return;
       ergebnis = e;
       phase = 'fertig';
-      const { pdfSeitenRendern } = await import('../lib/export/pdfVorschau');
-      await pdfSeitenRendern(e.blob, (bild) => {
-        if (!abgebrochen) seitenBilder = [...seitenBilder, bild];
-      });
-      vorschauFertig = true;
     } catch (fehler) {
       console.error('Bericht erstellen fehlgeschlagen', fehler);
       if (!abgebrochen) phase = ergebnis ? 'fertig' : 'fehler';
@@ -66,28 +58,15 @@
     }
   }
 
-  async function teilen() {
-    if (!ergebnis) return;
-    await dateiBereitstellen(ergebnis.blob, exportDateiname(tasting.name, 'Bericht', heuteIso(), 'pdf'), 'application/pdf');
-  }
 </script>
 
 {#if phase === 'fertig' && ergebnis}
-  <div class="vollbild" role="dialog" aria-modal="true" aria-label={t.vorschau}>
-    <div class="leiste">
-      <button class="ib" onclick={onSchliessen} aria-label={t.schliessen}>✕</button>
-      <h3>{t.vorschau} · {t.seiten(ergebnis.seiten)}</h3>
-    </div>
-    <div class="seiten">
-      {#each seitenBilder as bild, i (i)}
-        <img src={bild} alt="Seite {i + 1}" />
-      {/each}
-      {#if !vorschauFertig}<p class="hinweis">{t.arbeitet}</p>{/if}
-    </div>
-    <div class="aktionen">
-      <button class="knopf" onclick={teilen}>{t.teilen}</button>
-    </div>
-  </div>
+  <PdfVorschauAnsicht
+    blob={ergebnis.blob}
+    seiten={ergebnis.seiten}
+    dateiname={exportDateiname(tasting.name, 'Bericht', heuteIso(), 'pdf')}
+    onSchliessen={onSchliessen}
+  />
 {:else}
   <div class="blatt" role="dialog" aria-modal="true" aria-label={t.titel}>
     <button class="hintergrund" onclick={onSchliessen} disabled={beschaeftigt} aria-label={t.schliessen}></button>
@@ -234,52 +213,5 @@
     height: 100%;
     background: var(--hop);
     transition: width 0.2s;
-  }
-  .vollbild {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    display: flex;
-    flex-direction: column;
-    background: var(--bg);
-  }
-  .leiste {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
-    border-bottom: 2px solid var(--ink);
-  }
-  .leiste h3 {
-    font-size: 17px;
-  }
-  .seiten {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    display: grid;
-    align-content: start;
-    gap: 14px;
-    padding: 14px 12px;
-    background: color-mix(in srgb, var(--ink) 12%, var(--bg));
-  }
-  .seiten img {
-    width: 100%;
-    max-width: 640px;
-    margin: 0 auto;
-    display: block;
-    border: 1px solid var(--ink);
-    box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
-    background: #fff;
-  }
-  .seiten .hinweis {
-    text-align: center;
-  }
-  .aktionen {
-    display: flex;
-    justify-content: center;
-    padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
-    border-top: 2px solid var(--ink);
-    background: var(--bg);
   }
 </style>
