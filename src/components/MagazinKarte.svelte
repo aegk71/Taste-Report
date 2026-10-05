@@ -35,6 +35,7 @@
   let uebersicht = $state<SendeUebersicht | null>(null);
   let arbeitet = $state(false);
   let fehler = $state<KiFehlerCode | null>(null);
+  let fehlerDetail = $state('');
   let editorOffen = $state(false);
   let neuBestaetigen = $state(false);
 
@@ -64,6 +65,7 @@
     if (!schluessel) return;
     arbeitet = true;
     fehler = null;
+    fehlerDetail = '';
     try {
       const { artikelErzeugen, artikelSpeichern } = await import('../lib/ki/erzeugen');
       const artikel = await artikelErzeugen(tasting.id, { ton, laenge, fotos }, schluessel);
@@ -72,6 +74,7 @@
       editorOffen = true;
     } catch (f) {
       fehler = f instanceof KiFehler ? f.code : 'unbekannt';
+      fehlerDetail = f instanceof KiFehler ? (f.detail ?? '') : String(f);
       if (!(f instanceof KiFehler)) console.error('Text erzeugen fehlgeschlagen', f);
     }
     arbeitet = false;
@@ -133,7 +136,10 @@
           <span class="hinweis">{t.sendeInfo(uebersicht.biere, uebersicht.notizen, uebersicht.fotos)}</span>
         </div>
       {/if}
-      {#if fehler}<p class="fehler" role="alert">{de.ki.fehler[fehler]}</p>{/if}
+      {#if fehler}
+        <p class="fehler" role="alert">{de.ki.fehler[fehler]}</p>
+        {#if fehlerDetail}<p class="hinweis detail">{de.ki.technisch}: {fehlerDetail}</p>{/if}
+      {/if}
       <button class="knopf block" onclick={erzeugen}>{fehler ? t.nochmal : t.erzeugen}</button>
       {#if tasting.artikel}
         <button class="knopf sekundaer block" onclick={() => ((neuBestaetigen = false), (fehler = null))}>{de.allgemein.abbrechen}</button>
@@ -203,6 +209,10 @@
     align-items: center;
     min-height: 48px;
     font-weight: 600;
+  }
+  .detail {
+    font-size: 12px;
+    word-break: break-word;
   }
   .info,
   .vorhanden,

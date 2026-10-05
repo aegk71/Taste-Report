@@ -12,6 +12,7 @@
   let eingabe = $state('');
   let arbeitet = $state(false);
   let fehler = $state<KiFehlerCode | null>(null);
+  let fehlerDetail = $state('');
 
   $effect(() => {
     const abo = liveQuery(() => db.einstellungen.get('global')).subscribe({
@@ -32,7 +33,10 @@
       await db.einstellungen.update('global', { kiGeprueftAm: new Date().toISOString() });
       return null;
     } catch (f) {
-      if (f instanceof KiFehler) return f.code;
+      if (f instanceof KiFehler) {
+        fehlerDetail = f.detail ?? '';
+        return f.code;
+      }
       console.error('Verbindungstest fehlgeschlagen', f);
       return 'unbekannt';
     }
@@ -46,6 +50,7 @@
     }
     arbeitet = true;
     fehler = null;
+    fehlerDetail = '';
     await ladeEinstellungen();
     // Der Schlüssel wird gespeichert, solange er nicht abgelehnt wird (z. B. leeres Guthaben lässt sich später beheben)
     await db.einstellungen.update('global', { kiSchluessel: wert, kiGeprueftAm: undefined });
@@ -59,6 +64,7 @@
   async function erneutTesten() {
     if (!schluessel) return;
     arbeitet = true;
+    fehlerDetail = '';
     fehler = await testen(schluessel);
     arbeitet = false;
   }
@@ -109,7 +115,10 @@
     <button class="knopf sekundaer block entfernen" onclick={entfernen} disabled={arbeitet}>{t.entfernen}</button>
   {/if}
 
-  {#if fehler}<p class="fehler" role="alert">{t.fehler[fehler]}</p>{/if}
+  {#if fehler}
+    <p class="fehler" role="alert">{t.fehler[fehler]}</p>
+    {#if fehlerDetail}<p class="hinweis detail">{t.technisch}: {fehlerDetail}</p>{/if}
+  {/if}
 
   <p class="hinweis">{t.hinweisLokal}</p>
   <p class="hinweis">{t.hinweisDaten}</p>
@@ -146,6 +155,10 @@
   .ok {
     font-weight: 700;
     color: var(--hop);
+  }
+  .detail {
+    font-size: 12px;
+    word-break: break-word;
   }
   .entfernen {
     color: var(--red);

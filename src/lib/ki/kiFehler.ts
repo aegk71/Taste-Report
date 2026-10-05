@@ -4,10 +4,25 @@ export type KiFehlerCode = 'format' | 'schluessel' | 'guthaben' | 'limit' | 'ueb
 
 export class KiFehler extends Error {
   code: KiFehlerCode;
-  constructor(code: KiFehlerCode) {
+  /** Technische Angabe der API (Status und Meldung), nur zur Anzeige für die Fehlersuche */
+  detail?: string;
+  constructor(code: KiFehlerCode, detail?: string) {
     super(code);
     this.code = code;
+    this.detail = detail;
   }
+}
+
+/** "400: tool_choice: …" aus Status und Antworttext der API (kurz gehalten). */
+export function fehlerDetail(status: number, antwortText: string): string {
+  let meldung = antwortText;
+  try {
+    const json = JSON.parse(antwortText) as { error?: { message?: unknown } };
+    if (typeof json.error?.message === 'string') meldung = json.error.message;
+  } catch {
+    // kein JSON: der Rohtext genügt
+  }
+  return `${status}: ${meldung.replace(/\s+/g, ' ').trim().slice(0, 240)}`;
 }
 
 /** Anthropic-Schlüssel beginnen immer mit "sk-ant-". Leerzeichen und Zeilenumbrüche vom Einfügen werden entfernt. */

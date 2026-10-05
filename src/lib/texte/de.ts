@@ -184,6 +184,7 @@ export const de = {
     testet: 'Verbindung wird geprüft …',
     hinweisLokal: 'Der Schlüssel bleibt nur auf diesem Gerät. Er steht nicht im Backup und nicht im Code.',
     hinweisDaten: 'Beim Erzeugen eines Berichts gehen deine Notizen und verkleinerte Fotos an Anthropic.',
+    technisch: 'Technische Angabe',
     hinweisVerloren: 'Geht das Gerät verloren, lösche den Schlüssel in der Claude Console unter „API keys“.',
     fehler: {
       format: 'Das sieht nicht wie ein Anthropic-Schlüssel aus. Er beginnt mit „sk-ant-“.',

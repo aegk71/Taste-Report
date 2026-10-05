@@ -63,7 +63,7 @@ export function systemPrompt(verkoster: string, ton: KiTon, laenge: KiLaenge): s
     '- Bildunterschriften sind kurz (höchstens 10 Wörter), ohne Zahlen und nur für Biere, zu denen ein Foto geliefert wurde.',
     '- Auf den Fotos darfst du beschreiben, was zu sehen ist (Etikett, Farbe des Biers, Glas). Dichte nichts hinzu.',
     '- Schreibe auf Deutsch, ohne Markdown, ohne Aufzählungen und ohne Sternchen.',
-    '- Gliederung: Schlagzeile, Vorspann (ein bis zwei Sätze), Abschnitte mit Zwischenüberschrift, Schlusswort (ein bis zwei Sätze). Liefere das Ergebnis ausschließlich über das Werkzeug ' + WERKZEUG + '.',
+    '- Gliederung: Schlagzeile, Vorspann (ein bis zwei Sätze), Abschnitte mit Zwischenüberschrift, Schlusswort (ein bis zwei Sätze). Rufe zur Antwort genau einmal das Werkzeug ' + WERKZEUG + ' auf und schreibe keinen Text außerhalb des Werkzeugs.',
   ].join('\n');
 }
 
@@ -139,7 +139,9 @@ export function anfrageBauen(e: AnfrageEingabe): { body: object; idMap: Map<stri
       max_tokens: MAX_TOKENS[e.laenge],
       system: systemPrompt(e.tasting.verkoster, e.ton, e.laenge),
       tools: [WERKZEUG_DEFINITION],
-      tool_choice: { type: 'tool', name: WERKZEUG },
+      // Claude Sonnet 5.5 kennt keinen erzwungenen Werkzeugaufruf (tool_choice "tool"/"any" ergibt 400): Der Prompt verlangt den Aufruf.
+      // between_tools schaltet das Nachdenken vorab aus (spart Zeit und Token, die sonst auf max_tokens angerechnet werden).
+      thinking: { type: 'between_tools' },
       messages: [{ role: 'user', content: inhalt }],
     },
   };

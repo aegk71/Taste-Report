@@ -1,4 +1,4 @@
-import { fehlerCode, KiFehler } from './kiFehler';
+import { fehlerCode, fehlerDetail, KiFehler } from './kiFehler';
 
 /** Modell für den Magazin-Bericht (versteht Fotos, schreibt gutes Deutsch). Bewusst eine Konstante. */
 export const KI_MODELL = 'claude-sonnet-5-5';
@@ -31,7 +31,7 @@ export async function anfrage(schluessel: string, koerper: object, zeitlimitMs =
     } catch {
       // Antworttext nicht lesbar: der Statuscode genügt
     }
-    throw new KiFehler(fehlerCode(antwort.status, text));
+    throw new KiFehler(fehlerCode(antwort.status, text), fehlerDetail(antwort.status, text));
   }
   try {
     return await antwort.json();

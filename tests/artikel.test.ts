@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { alsKopie, type BackupTasting } from '../src/lib/backupFormat.ts';
+import { fehlerDetail } from '../src/lib/ki/kiFehler.ts';
 import {
   anfrageBauen,
   artikelAusAntwort,
@@ -32,10 +33,11 @@ const eingabe = (extra: Partial<AnfrageEingabe> = {}): AnfrageEingabe => ({
   ...extra,
 });
 
-test('Anfrage: Werkzeug erzwungen, Modell, Token je Länge', () => {
+test('Anfrage: Werkzeug mit Schema, kein erzwungener Aufruf, Nachdenken aus, Modell, Token je Länge', () => {
   const { body } = anfrageBauen(eingabe()) as { body: any };
   assert.equal(body.model, 'test-modell');
-  assert.deepEqual(body.tool_choice, { type: 'tool', name: WERKZEUG });
+  assert.equal(body.tool_choice, undefined, 'Sonnet 5.5 lehnt tool_choice tool/any mit 400 ab');
+  assert.deepEqual(body.thinking, { type: 'between_tools' });
   assert.equal(body.tools[0].name, WERKZEUG);
   assert.deepEqual(body.tools[0].input_schema.required, ['schlagzeile', 'vorspann', 'abschnitte', 'schlusswort']);
   assert.equal(body.max_tokens, 5000);
@@ -183,4 +185,10 @@ test('Backup-Kopie: Bier-IDs im Magazin-Text werden umgeschrieben', () => {
   assert.deepEqual(k.tasting.artikel!.zitate, [{ bier: neueId, text: 'x' }]);
   assert.deepEqual(k.tasting.artikel!.bildunterschriften, { [neueId]: 'Bild' });
   assert.equal(e.tasting.artikel!.zitate[0].bier, 'g1', 'Original bleibt unverändert');
+});
+
+test('Fehlerdetail: Status und Meldung der API, gekürzt', () => {
+  assert.equal(fehlerDetail(400, '{"type":"error","error":{"type":"invalid_request_error","message":"tool_choice: type \\"tool\\" is not supported"}}'), '400: tool_choice: type "tool" is not supported');
+  assert.equal(fehlerDetail(502, '<html>  Bad   Gateway </html>'), '502: <html> Bad Gateway </html>');
+  assert.equal(fehlerDetail(400, '{"error":{"message":"' + 'x'.repeat(500) + '"}}').length, 5 + 240);
 });
